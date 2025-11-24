@@ -9,40 +9,73 @@ class BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return BottomNavigationBar(
       currentIndex: currentIndex,
       onTap: onTap,
       type: BottomNavigationBarType.fixed,
       backgroundColor: Colors.white,
-      selectedItemColor: theme.colorScheme.primary,
-      unselectedItemColor: const Color(0xFF7C8193),
-      selectedLabelStyle: theme.textTheme.labelSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
-      unselectedLabelStyle: theme.textTheme.labelSmall,
-      showUnselectedLabels: true,
-      items: const [
+      showSelectedLabels: false,
+      showUnselectedLabels: false,
+      items: [
         BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'Home',
+          icon: Image.asset(
+            'assets/icons/bottom_nav/home_inactive.png',
+            width: 78,
+            height: 57,
+            filterQuality: FilterQuality.none,
+          ),
+          activeIcon: Image.asset(
+            'assets/icons/bottom_nav/home_active.png',
+            width: 78,
+            height: 57,
+            filterQuality: FilterQuality.none,
+          ),
+          label: '',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.favorite_border),
-          activeIcon: Icon(Icons.favorite),
-          label: 'Favorites',
+          icon: Image.asset(
+            'assets/icons/bottom_nav/favorites_inactive.png',
+            width: 78,
+            height: 57,
+            filterQuality: FilterQuality.none,
+          ),
+          activeIcon: Image.asset(
+            'assets/icons/bottom_nav/favorites_active.png',
+            width: 78,
+            height: 57,
+            filterQuality: FilterQuality.none,
+          ),
+          label: '',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.notifications_none),
-          activeIcon: Icon(Icons.notifications),
-          label: 'Notifications',
+          icon: Image.asset(
+            'assets/icons/bottom_nav/notifications_inactive.png',
+            width: 78,
+            height: 57,
+            filterQuality: FilterQuality.none,
+          ),
+          activeIcon: Image.asset(
+            'assets/icons/bottom_nav/notifications_active.png',
+            width: 78,
+            height: 57,
+            filterQuality: FilterQuality.none,
+          ),
+          label: '',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          activeIcon: Icon(Icons.person),
-          label: 'Profile',
+          icon: Image.asset(
+            'assets/icons/bottom_nav/profile_inactive.png',
+            width: 78,
+            height: 57,
+            filterQuality: FilterQuality.none,
+          ),
+          activeIcon: Image.asset(
+            'assets/icons/bottom_nav/profile_active.png',
+            width: 78,
+            height: 57,
+            filterQuality: FilterQuality.none,
+          ),
+          label: '',
         ),
       ],
     );
