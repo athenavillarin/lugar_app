@@ -1,0 +1,177 @@
+import 'package:flutter/material.dart';
+import '../../models/route_option.dart';
+
+class RouteCard extends StatelessWidget {
+  final RouteOption route;
+  final FareType fareType;
+  final bool isSelected;
+  final Color primaryBlue;
+
+  const RouteCard({
+    super.key,
+    required this.route,
+    required this.fareType,
+    required this.isSelected,
+    required this.primaryBlue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fare =
+        fareType == FareType.regular ? route.regularFare : route.discountedFare;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFFF0F7FF) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSelected ? primaryBlue.withOpacity(0.3) : Colors.transparent,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildTopRow(fare),
+          const SizedBox(height: 24),
+          _buildTimeline(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopRow(double fare) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Text(
+              route.duration,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1F2024),
+                fontFamily: 'Montserrat',
+              ),
+            ),
+            const SizedBox(width: 16),
+            Row(
+              children: route.segments.map((segment) {
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    segment.icon,
+                    size: 16,
+                    color: const Color(0xFF1F2024),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '₱ ${fare.toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1F2024),
+                fontFamily: 'Montserrat',
+              ),
+            ),
+            if (fareType == FareType.discounted)
+              Text(
+                'Discounted',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeline() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          alignment: Alignment.topCenter,
+          children: [
+            Positioned(
+              top: 7,
+              left: 10,
+              right: 10,
+              child: Container(height: 2, color: primaryBlue),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: route.timeline.map((point) {
+                return Column(
+                  children: [
+                    _buildTimelineDot(point),
+                    const SizedBox(height: 8),
+                    Text(
+                      point.label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      point.time,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey[400],
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTimelineDot(TimelinePoint point) {
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: primaryBlue, width: 2),
+      ),
+      child: Center(
+        child: Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: point.isCheckpoint ? Colors.white : primaryBlue,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    );
+  }
+}

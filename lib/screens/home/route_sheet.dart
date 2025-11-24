@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'location_suggestion.dart';
+import '../models/location_suggestion.dart';
+import '../models/route_option.dart';
+import 'widgets/fare_type_toggle.dart';
+import 'widgets/location_suggestion_dropdown.dart';
+import 'widgets/route_card.dart';
 
 class RouteSheet extends StatelessWidget {
   const RouteSheet({
@@ -20,6 +24,10 @@ class RouteSheet extends StatelessWidget {
     required this.onChooseOnMapFrom,
     required this.onChooseOnMapTo,
     required this.isMapSelectionMode,
+    required this.showResults,
+    required this.routeOptions,
+    required this.selectedFareType,
+    required this.onFareTypeChanged,
   });
 
   final TextEditingController fromController;
@@ -38,6 +46,10 @@ class RouteSheet extends StatelessWidget {
   final VoidCallback onChooseOnMapFrom;
   final VoidCallback onChooseOnMapTo;
   final bool isMapSelectionMode;
+  final bool showResults;
+  final List<RouteOption> routeOptions;
+  final FareType selectedFareType;
+  final Function(FareType) onFareTypeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +108,7 @@ class RouteSheet extends StatelessWidget {
     }
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.45,
+      initialChildSize: showResults ? 0.6 : 0.45,
       minChildSize: 0.4,
       maxChildSize: 0.85,
       builder: (context, scrollController) {
@@ -148,11 +160,31 @@ class RouteSheet extends StatelessWidget {
                           onSwap: onSwap,
                         ),
                         const SizedBox(height: 20),
-                        _FindRouteButton(
-                          primaryBlue: primaryBlue,
-                          isEnabled: isFormValid,
-                          onPressed: onFindRoute,
-                        ),
+                        if (!showResults)
+                          _FindRouteButton(
+                            primaryBlue: primaryBlue,
+                            isEnabled: isFormValid,
+                            onPressed: onFindRoute,
+                          )
+                        else ...[
+                          FareTypeToggle(
+                            selectedType: selectedFareType,
+                            onChanged: onFareTypeChanged,
+                            primaryBlue: primaryBlue,
+                          ),
+                          const SizedBox(height: 20),
+                          ...routeOptions.map(
+                            (route) => Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: RouteCard(
+                                route: route,
+                                fareType: selectedFareType,
+                                isSelected: false, // TODO: Implement selection
+                                primaryBlue: primaryBlue,
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 24),
                       ],
                     ),
