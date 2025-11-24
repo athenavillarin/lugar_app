@@ -1,25 +1,99 @@
 import 'package:flutter/material.dart';
+import 'location_suggestion.dart';
 
 class RouteSheet extends StatelessWidget {
   const RouteSheet({
     super.key,
     required this.fromController,
     required this.toController,
+    required this.fromFocusNode,
+    required this.toFocusNode,
     required this.isFormValid,
     required this.onSwap,
     required this.onFindRoute,
+    required this.fromSuggestions,
+    required this.toSuggestions,
+    required this.showFromDropdown,
+    required this.showToDropdown,
+    required this.onSelectFromLocation,
+    required this.onSelectToLocation,
+    required this.onChooseOnMapFrom,
+    required this.onChooseOnMapTo,
+    required this.isMapSelectionMode,
   });
 
   final TextEditingController fromController;
   final TextEditingController toController;
+  final FocusNode fromFocusNode;
+  final FocusNode toFocusNode;
   final bool isFormValid;
   final VoidCallback onSwap;
   final VoidCallback onFindRoute;
+  final List<LocationSuggestion> fromSuggestions;
+  final List<LocationSuggestion> toSuggestions;
+  final bool showFromDropdown;
+  final bool showToDropdown;
+  final Function(LocationSuggestion) onSelectFromLocation;
+  final Function(LocationSuggestion) onSelectToLocation;
+  final VoidCallback onChooseOnMapFrom;
+  final VoidCallback onChooseOnMapTo;
+  final bool isMapSelectionMode;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryBlue = theme.colorScheme.primary;
+
+    // Minimize sheet when in map selection mode
+    if (isMapSelectionMode) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.15,
+        minChildSize: 0.15,
+        maxChildSize: 0.15,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: primaryBlue,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Text(
+                    'Select location on map',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      fontFamily: 'Montserrat',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
 
     return DraggableScrollableSheet(
       initialChildSize: 0.45,
@@ -41,44 +115,75 @@ class RouteSheet extends StatelessWidget {
               ),
             ],
           ),
-          child: ListView(
-            controller: scrollController,
-            padding: EdgeInsets.zero,
+          child: Stack(
             children: [
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: primaryBlue,
-                    borderRadius: BorderRadius.circular(2),
+              ListView(
+                controller: scrollController,
+                padding: EdgeInsets.zero,
+                children: [
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: primaryBlue,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Title(),
+                        const SizedBox(height: 24),
+                        _InputForm(
+                          primaryBlue: primaryBlue,
+                          fromController: fromController,
+                          toController: toController,
+                          fromFocusNode: fromFocusNode,
+                          toFocusNode: toFocusNode,
+                          onSwap: onSwap,
+                        ),
+                        const SizedBox(height: 20),
+                        _FindRouteButton(
+                          primaryBlue: primaryBlue,
+                          isEnabled: isFormValid,
+                          onPressed: onFindRoute,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              // Dropdown overlays - positioned directly below input form
+              if (showFromDropdown)
+                Positioned(
+                  top:
+                      220, // Title (60) + spacing (24) + input form top half (136)
+                  left: 24,
+                  right: 24,
+                  child: LocationSuggestionDropdown(
+                    suggestions: fromSuggestions,
+                    onSelectLocation: onSelectFromLocation,
+                    onChooseOnMap: onChooseOnMapFrom,
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _Title(),
-                    const SizedBox(height: 24),
-                    _InputForm(
-                      primaryBlue: primaryBlue,
-                      fromController: fromController,
-                      toController: toController,
-                      onSwap: onSwap,
-                    ),
-                    const SizedBox(height: 20),
-                    _FindRouteButton(
-                      primaryBlue: primaryBlue,
-                      isEnabled: isFormValid,
-                      onPressed: onFindRoute,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+              if (showToDropdown)
+                Positioned(
+                  top: 220, // Same position as from dropdown
+                  left: 24,
+                  right: 24,
+                  child: LocationSuggestionDropdown(
+                    suggestions: toSuggestions,
+                    onSelectLocation: onSelectToLocation,
+                    onChooseOnMap: onChooseOnMapTo,
+                  ),
                 ),
-              ),
             ],
           ),
         );
@@ -121,12 +226,16 @@ class _InputForm extends StatelessWidget {
     required this.primaryBlue,
     required this.fromController,
     required this.toController,
+    required this.fromFocusNode,
+    required this.toFocusNode,
     required this.onSwap,
   });
 
   final Color primaryBlue;
   final TextEditingController fromController;
   final TextEditingController toController;
+  final FocusNode fromFocusNode;
+  final FocusNode toFocusNode;
   final VoidCallback onSwap;
 
   @override
@@ -193,12 +302,14 @@ class _InputForm extends StatelessWidget {
                   label: 'From',
                   placeholder: 'Your Location',
                   controller: fromController,
+                  focusNode: fromFocusNode,
                 ),
                 const SizedBox(height: 20),
                 _InputField(
                   label: 'To',
                   placeholder: 'Your Destination',
                   controller: toController,
+                  focusNode: toFocusNode,
                 ),
               ],
             ),
@@ -229,11 +340,13 @@ class _InputField extends StatelessWidget {
     required this.label,
     required this.placeholder,
     required this.controller,
+    required this.focusNode,
   });
 
   final String label;
   final String placeholder;
   final TextEditingController controller;
+  final FocusNode focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -251,6 +364,7 @@ class _InputField extends StatelessWidget {
         const SizedBox(height: 4),
         TextField(
           controller: controller,
+          focusNode: focusNode,
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -288,7 +402,7 @@ class _FindRouteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 49,
       child: ElevatedButton(
         onPressed: isEnabled ? onPressed : null,
         style: ElevatedButton.styleFrom(
