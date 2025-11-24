@@ -98,8 +98,8 @@ class SplashScreen extends StatelessWidget {
                             Text(
                               "Let's go!",
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w500,
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
