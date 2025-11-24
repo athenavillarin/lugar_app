@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/auth/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
@@ -7,7 +8,9 @@ import 'screens/app_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+  }
   runApp(MyApp());
 }
 
