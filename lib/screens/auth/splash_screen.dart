@@ -5,10 +5,10 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FB),
       body: SafeArea(
         child: Column(
           children: [
@@ -40,7 +40,7 @@ class SplashScreen extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 40),
                       child: Image.asset(
                         'assets/images/lugar logo.png',
-                        width: 160,
+                        width: 180,
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -48,10 +48,10 @@ class SplashScreen extends StatelessWidget {
                     // Gap between logo and text
                     const SizedBox(height: 20),
 
-                    const Text(
+                    Text(
                       'Meet your local jeepney companion!',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Color(0xFF1F2024), fontSize: 14),
+                      style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
                     ),
 
                     const SizedBox(height: 120),
@@ -69,21 +69,21 @@ class SplashScreen extends StatelessWidget {
                             states,
                           ) {
                             if (states.contains(WidgetState.pressed)) {
-                              return const Color(0xFFF5F8FF); // pressed bg
+                              return theme.scaffoldBackgroundColor;
                             }
-                            return const Color(0xFF006FFD); // normal bg
+                            return theme.colorScheme.primary;
                           }),
                           foregroundColor: WidgetStateProperty.resolveWith((
                             states,
                           ) {
                             if (states.contains(WidgetState.pressed)) {
-                              return const Color(0xFF1F2024); // pressed text
+                              return theme.textTheme.bodyMedium?.color;
                             }
-                            return Colors.white; // normal text
+                            return theme.colorScheme.onPrimary;
                           }),
                           elevation: WidgetStateProperty.all(6),
                           shadowColor: WidgetStateProperty.all(
-                            const Color(0x4D006FFD),
+                            theme.colorScheme.primary.withOpacity(0.3),
                           ),
                           shape: WidgetStateProperty.all(
                             RoundedRectangleBorder(
