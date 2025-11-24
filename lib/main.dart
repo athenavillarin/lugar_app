@@ -11,12 +11,38 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const primaryTextColor = Color(0xFF1F2024);
+    const primaryBlue = Color(0xFF006FFD);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Lugar App',
       theme: ThemeData(
         fontFamily: 'Montserrat',
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        scaffoldBackgroundColor: const Color(0xFFF5F8FF),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryBlue,
+          primary: primaryBlue,
+          secondary: primaryBlue,
+        ),
+        textTheme: Typography.blackMountainView.apply(
+          bodyColor: primaryTextColor,
+          displayColor: primaryTextColor,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: primaryTextColor,
+          elevation: 0,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryBlue,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
       ),
       initialRoute: '/',
       routes: {
