@@ -195,19 +195,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
+                    Text(
                       "Don't have an account? ",
-                      style: TextStyle(fontSize: 13, color: Color(0xFF7C8193)),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontSize: 13),
                     ),
                     GestureDetector(
                       onTap: () {
-                        // TODO: Navigate to register
+                        Navigator.of(context).pushNamed('/signup');
                       },
                       child: const Text(
                         'Register',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: Color(0xFF1F2024),
                         ),
                       ),
@@ -240,14 +242,20 @@ class _RoundedTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return TextField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hintText,
+        hintStyle: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.4),
+          fontWeight: FontWeight.w400,
+        ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: theme.scaffoldBackgroundColor,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,

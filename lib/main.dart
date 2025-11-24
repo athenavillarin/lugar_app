@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'screens/auth/splash_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/signup_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -42,7 +45,13 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const MyHomePage(title: 'Flutter Demo Home Page'),
+        '/signup': (context) => const SignupScreen(),
+      },
     );
   }
 }
