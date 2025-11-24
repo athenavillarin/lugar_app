@@ -173,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          // TODO: Continue as guest
+                          Navigator.of(context).pushReplacementNamed('/home');
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
