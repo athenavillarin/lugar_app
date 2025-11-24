@@ -1,4 +1,4 @@
-import 'location_suggestion.dart';
+import '../models/location_suggestion.dart';
 
 // Temporary location data for Iloilo City
 class TempLocations {

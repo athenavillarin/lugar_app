@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'map_placeholder.dart';
 import 'route_sheet.dart';
-import 'location_suggestion.dart';
+import '../models/location_suggestion.dart';
 import 'temp_locations.dart';
+import '../models/route_option.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +24,11 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isToFocused = false;
   bool _isMapSelectionMode = false;
   String? _activeField; // 'from' or 'to'
+
+  // Route Results State
+  bool _showRouteResults = false;
+  FareType _selectedFareType = FareType.regular;
+  List<RouteOption> _routeOptions = [];
 
   @override
   void initState() {
@@ -45,12 +51,18 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onFromTextChanged() {
     setState(() {
       _fromSuggestions = TempLocations.searchLocations(_fromController.text);
+      if (_showRouteResults) {
+        _showRouteResults = false;
+      }
     });
   }
 
   void _onToTextChanged() {
     setState(() {
       _toSuggestions = TempLocations.searchLocations(_toController.text);
+      if (_showRouteResults) {
+        _showRouteResults = false;
+      }
     });
   }
 
@@ -153,10 +165,54 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _findRoute() {
     if (_isFormValid) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Finding route...')));
-      // TODO: Implement route finding logic / navigation
+      // Mock data generation
+      setState(() {
+        _showRouteResults = true;
+        _routeOptions = [
+          RouteOption(
+            duration: '20 mins',
+            regularFare: 15.00,
+            discountedFare: 12.00,
+            segments: [
+              TransportSegment(icon: Icons.directions_walk, type: 'walk'),
+              TransportSegment(icon: Icons.directions_bus, type: 'jeep'),
+            ],
+            timeline: [
+              TimelinePoint(label: 'Start', time: '8:00 am'),
+              TimelinePoint(
+                label: 'Checkpoint 1',
+                time: '8:05 am',
+                isCheckpoint: true,
+              ),
+              TimelinePoint(label: 'Destination', time: '8:20 am'),
+            ],
+          ),
+          RouteOption(
+            duration: '40 mins',
+            regularFare: 30.00,
+            discountedFare: 24.00,
+            segments: [
+              TransportSegment(icon: Icons.directions_bus, type: 'jeep'),
+              TransportSegment(icon: Icons.directions_walk, type: 'walk'),
+              TransportSegment(icon: Icons.directions_bus, type: 'jeep'),
+            ],
+            timeline: [
+              TimelinePoint(label: 'Start', time: '8:00 am'),
+              TimelinePoint(
+                label: 'Checkpoint 1',
+                time: '8:10 am',
+                isCheckpoint: true,
+              ),
+              TimelinePoint(
+                label: 'Checkpoint 2',
+                time: '8:20 am',
+                isCheckpoint: true,
+              ),
+              TimelinePoint(label: 'Destination', time: '8:40 am'),
+            ],
+          ),
+        ];
+      });
     }
   }
 
@@ -187,6 +243,14 @@ class _HomeScreenState extends State<HomeScreen> {
             onChooseOnMapFrom: _chooseOnMapFrom,
             onChooseOnMapTo: _chooseOnMapTo,
             isMapSelectionMode: _isMapSelectionMode,
+            showResults: _showRouteResults,
+            routeOptions: _routeOptions,
+            selectedFareType: _selectedFareType,
+            onFareTypeChanged: (type) {
+              setState(() {
+                _selectedFareType = type;
+              });
+            },
           ),
         ],
       ),
