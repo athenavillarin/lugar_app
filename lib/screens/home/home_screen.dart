@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: Text('Where would you like to go today?')),
-      body: Center(child: Text('Home Screen')),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Center(
+        child: Text('Home Screen', style: theme.textTheme.bodyMedium),
+      ),
     );
   }
 }
