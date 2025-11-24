@@ -1,4 +1,4 @@
-package com.example.lugar_app
+package com.lugar.iloilo
 
 import io.flutter.embedding.android.FlutterActivity
 
