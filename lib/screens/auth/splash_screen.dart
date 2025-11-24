@@ -22,7 +22,7 @@ class SplashScreen extends StatelessWidget {
                   bottomRight: Radius.circular(18),
                 ),
                 image: DecorationImage(
-                  image: AssetImage('assets/images/splashscreen.jpg'),
+                  image: AssetImage('assets/images/splashscreen.png'),
                   fit: BoxFit.cover,
                 ),
               ),
