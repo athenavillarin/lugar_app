@@ -38,12 +38,18 @@ class FCMService {
     // Get FCM token
     String? token = await _messaging.getToken();
     debugPrint('FCM Token: $token');
-    // TODO: Send token to backend to associate with user
+
+    // Subscribe all users (guest and authenticated) to general topics
+    await subscribeToTopic('general_announcements');
+    await subscribeToTopic('service_updates');
+    // Guest users can receive important app-wide notifications
+    // Their notifications are stored locally (in-memory)
+    // Authenticated users get same notifications stored in Firestore
 
     // Listen for token refresh
     _messaging.onTokenRefresh.listen((newToken) {
       debugPrint('FCM Token refreshed: $newToken');
-      // TODO: Send new token to backend
+      // Token is device-specific, works for both guest and authenticated users
     });
 
     // Handle foreground messages

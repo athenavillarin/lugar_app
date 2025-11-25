@@ -54,7 +54,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(
@@ -222,7 +222,7 @@ class _NotificationCard extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFEAF2FF),
+            color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(

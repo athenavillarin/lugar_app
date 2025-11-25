@@ -54,6 +54,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     const primaryTextColor = Color(0xFF1F2024);
     const primaryBlue = Color(0xFF006FFD);
+    const cardBackgroundColor = Color(0xFFEAF2FF);
 
     return MultiProvider(
       providers: [ChangeNotifierProvider.value(value: _notificationProvider)],
@@ -67,7 +68,9 @@ class _MyAppState extends State<MyApp> {
             seedColor: primaryBlue,
             primary: primaryBlue,
             secondary: primaryBlue,
+            surfaceContainerHighest: cardBackgroundColor, // Card background
           ),
+          cardTheme: const CardThemeData(color: cardBackgroundColor),
           textTheme: Typography.blackMountainView.apply(
             bodyColor: primaryTextColor,
             displayColor: primaryTextColor,

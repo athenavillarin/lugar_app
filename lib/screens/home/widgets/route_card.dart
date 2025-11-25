@@ -17,13 +17,15 @@ class RouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fare =
-        fareType == FareType.regular ? route.regularFare : route.discountedFare;
+    final theme = Theme.of(context);
+    final fare = fareType == FareType.regular
+        ? route.regularFare
+        : route.discountedFare;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFF0F7FF) : Colors.white,
+        color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isSelected ? primaryBlue.withOpacity(0.3) : Colors.transparent,
