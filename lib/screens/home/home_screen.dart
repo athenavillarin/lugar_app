@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'map_placeholder.dart';
+import '../../widgets/map_widget.dart';
 import 'route_sheet.dart';
 import '../models/location_suggestion.dart';
 import 'temp_locations.dart';
@@ -221,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          MapPlaceholder(
+          MapWidget(
             isSelectionMode: _isMapSelectionMode,
             onLocationSelected: _onMapLocationSelected,
             onCancel: _cancelMapSelection,

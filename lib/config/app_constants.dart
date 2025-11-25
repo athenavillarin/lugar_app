@@ -7,8 +7,8 @@ class AppConstants {
   static const String baseUrl = 'http://localhost:3000';
 
   // Map Configuration
-  static const double defaultLatitude = 14.5995; // Manila
-  static const double defaultLongitude = 120.9842;
+  static const double defaultLatitude = 10.7202; // Iloilo City
+  static const double defaultLongitude = 122.5621;
   static const double defaultZoom = 15.0;
 
   // UI Configuration
