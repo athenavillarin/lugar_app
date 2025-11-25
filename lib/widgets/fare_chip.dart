@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class FareChip extends StatelessWidget {
   final String text;
-  const FareChip({Key? key, this.text = ''}) : super(key: key);
+  const FareChip({super.key, this.text = ''});
 
   @override
   Widget build(BuildContext context) {

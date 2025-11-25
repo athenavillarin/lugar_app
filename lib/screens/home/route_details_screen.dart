@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class RouteDetailsScreen extends StatelessWidget {
-  const RouteDetailsScreen({Key? key}) : super(key: key);
+  const RouteDetailsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class FindRouteScreen extends StatelessWidget {
-  const FindRouteScreen({Key? key}) : super(key: key);
+  const FindRouteScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
