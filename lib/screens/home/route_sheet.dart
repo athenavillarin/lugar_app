@@ -4,6 +4,7 @@ import '../models/route_option.dart';
 import 'widgets/fare_type_toggle.dart';
 import 'widgets/location_suggestion_dropdown.dart';
 import 'widgets/route_card.dart';
+import 'route_detail_screen.dart';
 
 class RouteSheet extends StatelessWidget {
   const RouteSheet({
@@ -28,6 +29,7 @@ class RouteSheet extends StatelessWidget {
     required this.routeOptions,
     required this.selectedFareType,
     required this.onFareTypeChanged,
+    required this.sheetController,
   });
 
   final TextEditingController fromController;
@@ -50,6 +52,8 @@ class RouteSheet extends StatelessWidget {
   final List<RouteOption> routeOptions;
   final FareType selectedFareType;
   final Function(FareType) onFareTypeChanged;
+
+  final DraggableScrollableController sheetController;
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +112,7 @@ class RouteSheet extends StatelessWidget {
     }
 
     return DraggableScrollableSheet(
+      controller: sheetController,
       initialChildSize: showResults ? 0.6 : 0.45,
       minChildSize: 0.4,
       maxChildSize: 0.85,
@@ -181,6 +186,14 @@ class RouteSheet extends StatelessWidget {
                                 fareType: selectedFareType,
                                 isSelected: false, // TODO: Implement selection
                                 primaryBlue: primaryBlue,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          RouteDetailScreen(routeOption: route),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -195,8 +208,7 @@ class RouteSheet extends StatelessWidget {
               // Dropdown overlays - positioned directly below input form
               if (showFromDropdown)
                 Positioned(
-                  top:
-                      220, // Title (60) + spacing (24) + input form top half (136)
+                  top: 220, // Adjust as needed for your layout
                   left: 24,
                   right: 24,
                   child: LocationSuggestionDropdown(
@@ -207,7 +219,7 @@ class RouteSheet extends StatelessWidget {
                 ),
               if (showToDropdown)
                 Positioned(
-                  top: 220, // Same position as from dropdown
+                  top: 308, // Place below the 'To' field (adjust as needed)
                   left: 24,
                   right: 24,
                   child: LocationSuggestionDropdown(

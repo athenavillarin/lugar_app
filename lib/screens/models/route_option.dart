@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 enum FareType { regular, discounted }
 
 class RouteOption {
+  final String routeId;
+  final List<RoutePoint> routePath;
   final String duration;
   final double regularFare;
   final double discountedFare;
@@ -10,12 +12,20 @@ class RouteOption {
   final List<TimelinePoint> timeline;
 
   const RouteOption({
+    required this.routeId,
+    required this.routePath,
     required this.duration,
     required this.regularFare,
     required this.discountedFare,
     required this.segments,
     required this.timeline,
   });
+}
+
+class RoutePoint {
+  final double latitude;
+  final double longitude;
+  const RoutePoint({required this.latitude, required this.longitude});
 }
 
 class TransportSegment {
