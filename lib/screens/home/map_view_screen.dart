@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/map_widget.dart';
 
 class MapViewScreen extends StatelessWidget {
   const MapViewScreen({super.key});
@@ -6,8 +7,8 @@ class MapViewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Map View')),
-      body: Center(child: Text('Map View Screen')),
+      appBar: AppBar(title: const Text('Map View')),
+      body: const MapWidget(),
     );
   }
 }
