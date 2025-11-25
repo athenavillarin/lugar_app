@@ -95,6 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _toController.addListener(_onToTextChanged);
     _fromFocusNode.addListener(_onFromFocusChanged);
     _toFocusNode.addListener(_onToFocusChanged);
+    _injectDemoRouteOptions(); // TODO: REMOVE DEMO DATA AFTER VERIFICATION
   }
 
   @override
@@ -265,6 +266,71 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _isMapSelectionMode = false;
       _activeField = null;
+    });
+  }
+
+  // Temporary demo route data for frontend verification only.
+  // TODO: REMOVE THIS WHEN REAL DATASET INTEGRATION IS READY.
+  void _injectDemoRouteOptions() {
+    if (_routeOptions.isNotEmpty)
+      return; // Avoid overwriting actual fetched data.
+    final demo = [
+      RouteOption(
+        routeId: 'DEMO_R1',
+        routePath: const [
+          RoutePoint(latitude: 10.7202, longitude: 122.5621),
+          RoutePoint(latitude: 10.7230, longitude: 122.5650),
+        ],
+        duration: '20 mins',
+        regularFare: 12.00,
+        discountedFare: 10.00,
+        segments: const [
+          TransportSegment(icon: Icons.directions_walk, type: 'Walk'),
+          TransportSegment(icon: Icons.directions_bus, type: 'Jeepney'),
+        ],
+        timeline: const [
+          TimelinePoint(label: 'Start', time: '8:00 am'),
+          TimelinePoint(
+            label: 'Checkpoint 1',
+            time: '8:05 am',
+            isCheckpoint: true,
+          ),
+          TimelinePoint(label: 'Destination', time: '8:20 am'),
+        ],
+      ),
+      RouteOption(
+        routeId: 'DEMO_R2',
+        routePath: const [
+          RoutePoint(latitude: 10.7202, longitude: 122.5621),
+          RoutePoint(latitude: 10.7255, longitude: 122.5675),
+        ],
+        duration: '40 mins',
+        regularFare: 24.00,
+        discountedFare: 20.00,
+        segments: const [
+          TransportSegment(icon: Icons.directions_bus, type: 'Jeepney'),
+          TransportSegment(icon: Icons.directions_walk, type: 'Walk'),
+          TransportSegment(icon: Icons.directions_bus, type: 'Jeepney'),
+        ],
+        timeline: const [
+          TimelinePoint(label: 'Start', time: '8:00 am'),
+          TimelinePoint(
+            label: 'Checkpoint 1',
+            time: '8:10 am',
+            isCheckpoint: true,
+          ),
+          TimelinePoint(
+            label: 'Checkpoint 2',
+            time: '8:20 am',
+            isCheckpoint: true,
+          ),
+          TimelinePoint(label: 'Destination', time: '8:40 am'),
+        ],
+      ),
+    ];
+    setState(() {
+      _routeOptions.addAll(demo);
+      _showRouteResults = true;
     });
   }
 
