@@ -7,7 +7,10 @@
 .buildlog/
 .history
 
-
+# Firebase
+serviceAccountKey.json
+scripts/serviceAccountKey.json
+node_modules/
 
 # Flutter repo-specific
 /bin/cache/
