@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/location_suggestion.dart';
 import '../models/route_option.dart';
+import 'route_detail_screen.dart';
 import 'widgets/fare_type_toggle.dart';
 import 'widgets/location_suggestion_dropdown.dart';
-import 'widgets/route_card.dart';
-import 'route_detail_screen.dart';
+// Removed RouteCard & detail screen import for blank grid placeholders
 
 class RouteSheet extends StatelessWidget {
   const RouteSheet({
@@ -177,23 +177,56 @@ class RouteSheet extends StatelessWidget {
                             onChanged: onFareTypeChanged,
                             primaryBlue: primaryBlue,
                           ),
-                          const SizedBox(height: 20),
-                          ...routeOptions.map(
-                            (route) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: RouteCard(
-                                route: route,
-                                fareType: selectedFareType,
-                                isSelected: false, // TODO: Implement selection
-                                primaryBlue: primaryBlue,
+                          const SizedBox(height: 24),
+                          Text(
+                            'Choose your route',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Montserrat',
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Blank horizontal full-width route option containers
+                          Column(
+                            children: List.generate(
+                              (routeOptions.isNotEmpty
+                                  ? routeOptions.length
+                                  : 2),
+                              (index) => InkWell(
                                 onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          RouteDetailScreen(routeOption: route),
-                                    ),
-                                  );
+                                  if (routeOptions.isNotEmpty) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => RouteDetailScreen(
+                                          routeOption: routeOptions[index],
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Route data not available yet',
+                                        ),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
                                 },
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  height: 120,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: theme
+                                        .colorScheme
+                                        .surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(16),
+                                    // Border removed as requested
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -472,3 +505,5 @@ class _FindRouteButton extends StatelessWidget {
     );
   }
 }
+
+// (No data yet) placeholders removed from separate widget to simplify layout.
