@@ -6,6 +6,7 @@ class RouteCard extends StatelessWidget {
   final FareType fareType;
   final bool isSelected;
   final Color primaryBlue;
+  final VoidCallback? onTap;
 
   const RouteCard({
     super.key,
@@ -13,6 +14,7 @@ class RouteCard extends StatelessWidget {
     required this.fareType,
     required this.isSelected,
     required this.primaryBlue,
+    this.onTap,
   });
 
   @override
@@ -22,28 +24,34 @@ class RouteCard extends StatelessWidget {
         ? route.regularFare
         : route.discountedFare;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isSelected ? primaryBlue.withOpacity(0.3) : Colors.transparent,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? primaryBlue.withOpacity(0.3)
+                : Colors.transparent,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildTopRow(fare),
-          const SizedBox(height: 24),
-          _buildTimeline(),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            _buildTopRow(fare),
+            const SizedBox(height: 24),
+            _buildTimeline(),
+          ],
+        ),
       ),
     );
   }

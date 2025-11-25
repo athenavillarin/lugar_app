@@ -6,8 +6,9 @@ class MapWidget extends StatefulWidget {
   final LatLng center;
   final double zoom;
   final List<Marker> markers;
+  final List<Polyline> polylines;
   final bool isSelectionMode;
-  final Function(String)? onLocationSelected;
+  final Function(LatLng)? onLocationSelected;
   final VoidCallback? onCancel;
 
   const MapWidget({
@@ -15,6 +16,7 @@ class MapWidget extends StatefulWidget {
     this.center = const LatLng(10.7202, 122.5621), // Iloilo City coordinates
     this.zoom = 13.0,
     this.markers = const [],
+    this.polylines = const [],
     this.isSelectionMode = false,
     this.onLocationSelected,
     this.onCancel,
@@ -55,10 +57,7 @@ class _MapWidgetState extends State<MapWidget> {
                     setState(() {
                       selectedLocation = latLng;
                     });
-                    // Format location as string
-                    String locationString =
-                        '${latLng.latitude.toStringAsFixed(6)}, ${latLng.longitude.toStringAsFixed(6)}';
-                    widget.onLocationSelected?.call(locationString);
+                    widget.onLocationSelected?.call(latLng);
                   }
                 : null,
           ),
@@ -68,6 +67,8 @@ class _MapWidgetState extends State<MapWidget> {
               userAgentPackageName: 'com.example.lugar_app',
             ),
             MarkerLayer(markers: displayMarkers),
+            if (widget.polylines.isNotEmpty)
+              PolylineLayer(polylines: widget.polylines),
           ],
         ),
 
