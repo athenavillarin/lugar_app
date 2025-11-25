@@ -12,7 +12,20 @@
           "package_name": "com.lugar.iloilo"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1096429750320-ucvcmbclet7rj7ltip3c4r1od5efu7ak.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lugar.iloilo",
+            "certificate_hash": "4bd8a79a76a886aa809e15e4e0fee2df3d05d2fa"
+          }
+        },
+        {
+          "client_id": "1096429750320-2ng7p0hs4d2atekp1si9kra7vgq223mr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDJ3HCBEOob4S4uvCUXsZB6oOhD1B9V1hY"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1096429750320-2ng7p0hs4d2atekp1si9kra7vgq223mr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1096429750320-jerflir8tbmnp9q73sqdt7pqt4i486fg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.lugarApp"
+              }
+            }
+          ]
         }
       }
     }
