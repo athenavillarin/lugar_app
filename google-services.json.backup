@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1096429750320",
+    "project_id": "lugar-b6713",
+    "storage_bucket": "lugar-b6713.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1096429750320:android:1f250b72dac56ce33c45f5",
+        "android_client_info": {
+          "package_name": "com.lugar.iloilo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1096429750320-ucvcmbclet7rj7ltip3c4r1od5efu7ak.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lugar.iloilo",
+            "certificate_hash": "4bd8a79a76a886aa809e15e4e0fee2df3d05d2fa"
+          }
+        },
+        {
+          "client_id": "1096429750320-2ng7p0hs4d2atekp1si9kra7vgq223mr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJ3HCBEOob4S4uvCUXsZB6oOhD1B9V1hY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1096429750320-2ng7p0hs4d2atekp1si9kra7vgq223mr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1096429750320-jerflir8tbmnp9q73sqdt7pqt4i486fg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.lugarApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

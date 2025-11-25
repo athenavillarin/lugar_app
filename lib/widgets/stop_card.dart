@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class StopCard extends StatelessWidget {
-  const StopCard({Key? key}) : super(key: key);
+  const StopCard({super.key});
 
   @override
   Widget build(BuildContext context) {
