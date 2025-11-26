@@ -4,7 +4,7 @@ import '../models/route_option.dart';
 import 'route_detail_screen.dart';
 import 'widgets/fare_type_toggle.dart';
 import 'widgets/location_suggestion_dropdown.dart';
-// Removed RouteCard & detail screen import for blank grid placeholders
+import 'widgets/route_card.dart';
 
 class RouteSheet extends StatelessWidget {
   const RouteSheet({
@@ -59,6 +59,9 @@ class RouteSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryBlue = theme.colorScheme.primary;
+    print(
+      'DEBUG: RouteSheet build called, routeOptions.length = [33m${routeOptions.length}[0m, showResults = $showResults',
+    );
 
     // Minimize sheet when in map selection mode
     if (isMapSelectionMode) {
@@ -188,47 +191,43 @@ class RouteSheet extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          // Blank horizontal full-width route option containers
+                          // Route cards
                           Column(
-                            children: List.generate(
-                              (routeOptions.isNotEmpty
-                                  ? routeOptions.length
-                                  : 2),
-                              (index) => InkWell(
-                                onTap: () {
-                                  if (routeOptions.isNotEmpty) {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => RouteDetailScreen(
-                                          routeOption: routeOptions[index],
-                                        ),
-                                      ),
+                            children: routeOptions.isNotEmpty
+                                ? routeOptions.map((route) {
+                                    return RouteCard(
+                                      route: route,
+                                      fareType: selectedFareType,
+                                      isSelected:
+                                          false, // You can implement selection logic
+                                      primaryBlue: primaryBlue,
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) => RouteDetailScreen(
+                                              routeOption: route,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Route data not available yet',
-                                        ),
-                                        duration: Duration(seconds: 2),
+                                  }).toList()
+                                : [
+                                    // Placeholder when no routes
+                                    Container(
+                                      height: 120,
+                                      margin: const EdgeInsets.only(bottom: 16),
+                                      decoration: BoxDecoration(
+                                        color: theme
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
-                                    );
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(16),
-                                child: Container(
-                                  height: 120,
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  decoration: BoxDecoration(
-                                    color: theme
-                                        .colorScheme
-                                        .surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(16),
-                                    // Border removed as requested
-                                  ),
-                                ),
-                              ),
-                            ),
+                                      child: const Center(
+                                        child: Text('No routes found'),
+                                      ),
+                                    ),
+                                  ],
                           ),
                         ],
                         const SizedBox(height: 24),
