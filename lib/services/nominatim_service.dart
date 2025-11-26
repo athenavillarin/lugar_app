@@ -26,7 +26,7 @@ class NominatimService {
     // Always bias search to Iloilo City, Iloilo, Philippines
     final String iloiloQuery = '$query, Iloilo City, Iloilo, Philippines';
     final url = Uri.parse(
-      'http://10.0.2.2:8090/search?q=${Uri.encodeComponent(iloiloQuery)}&format=json',
+      'https://234a85c9f700.ngrok-free.app/search?q=${Uri.encodeComponent(iloiloQuery)}&format=json',
     );
     final response = await http.get(
       url,
