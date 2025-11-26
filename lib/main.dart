@@ -9,6 +9,7 @@ import 'screens/auth/signup_screen.dart';
 import 'screens/app_shell.dart';
 import 'services/fcm_service.dart';
 import 'providers/notification_provider.dart';
+import 'providers/favorites_provider.dart';
 
 // Top-level function for handling background messages
 @pragma('vm:entry-point')
@@ -36,6 +37,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final NotificationProvider _notificationProvider = NotificationProvider();
+  final FavoritesProvider _favoritesProvider = FavoritesProvider();
   FCMService? _fcmService;
 
   @override
@@ -57,7 +59,10 @@ class _MyAppState extends State<MyApp> {
     const cardBackgroundColor = Color(0xFFEAF2FF);
 
     return MultiProvider(
-      providers: [ChangeNotifierProvider.value(value: _notificationProvider)],
+      providers: [
+        ChangeNotifierProvider.value(value: _notificationProvider),
+        ChangeNotifierProvider.value(value: _favoritesProvider),
+      ],
       child: MaterialApp(
         title: 'Lugar',
         debugShowCheckedModeBanner: false,

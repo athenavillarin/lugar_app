@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../widgets/map_widget.dart';
 import 'package:geolocator/geolocator.dart';
@@ -9,7 +8,7 @@ import '../models/location_suggestion.dart';
 import '../../services/nominatim_service.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/route_option.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/route_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -74,6 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
       DraggableScrollableController();
   final TextEditingController _fromController = TextEditingController();
   final TextEditingController _toController = TextEditingController();
+  double? _fromSelectedLat;
+  double? _fromSelectedLng;
+  double? _toSelectedLat;
+  double? _toSelectedLng;
   final FocusNode _fromFocusNode = FocusNode();
   final FocusNode _toFocusNode = FocusNode();
   bool _isFromFocused = false;
@@ -111,6 +114,17 @@ class _HomeScreenState extends State<HomeScreen> {
       _setCurrentLocation(isFrom: true);
     } else {
       _fromController.text = suggestion.name;
+      // Geocode and store coordinates, but do NOT overwrite the text field
+      NominatimService.searchPlaces(suggestion.name).then((results) {
+        if (results.isNotEmpty) {
+          final lat = results.first.lat;
+          final lon = results.first.lon;
+          setState(() {
+            _fromSelectedLat = lat;
+            _fromSelectedLng = lon;
+          });
+        }
+      });
     }
     _fromFocusNode.unfocus();
     setState(() => _fromPlaceSuggestions = []);
@@ -121,6 +135,17 @@ class _HomeScreenState extends State<HomeScreen> {
       _setCurrentLocation(isFrom: false);
     } else {
       _toController.text = suggestion.name;
+      // Geocode and store coordinates, but do NOT overwrite the text field
+      NominatimService.searchPlaces(suggestion.name).then((results) {
+        if (results.isNotEmpty) {
+          final lat = results.first.lat;
+          final lon = results.first.lon;
+          setState(() {
+            _toSelectedLat = lat;
+            _toSelectedLng = lon;
+          });
+        }
+      });
     }
     _toFocusNode.unfocus();
     setState(() => _toPlaceSuggestions = []);
@@ -269,20 +294,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _findRoute() async {
-    if (!_isFormValid) return;
-
-    // Helper: Haversine formula
-    double haversine(double lat1, double lon1, double lat2, double lon2) {
-      const R = 6371000; // meters
-      final dLat = (lat2 - lat1) * 3.141592653589793 / 180.0;
-      final dLon = (lon2 - lon1) * 3.141592653589793 / 180.0;
-      final a =
-          (sin(dLat / 2) * sin(dLat / 2)) +
-          cos(lat1 * 3.141592653589793 / 180.0) *
-              cos(lat2 * 3.141592653589793 / 180.0) *
-              (sin(dLon / 2) * sin(dLon / 2));
-      final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-      return R * c;
+    print('DEBUG: _findRoute called');
+    if (!_isFormValid) {
+      print('DEBUG: _findRoute exited early, form not valid');
+      return;
     }
 
     // 1. Get coordinates for from/to
@@ -307,9 +322,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final fromInput = _fromController.text.trim();
     final toInput = _toController.text.trim();
-    final fromCoord = await getLatLng(fromInput);
-    final toCoord = await getLatLng(toInput);
+    print('DEBUG: fromInput = "$fromInput"');
+    print('DEBUG: toInput = "$toInput"');
+    LatLng? fromCoord;
+    LatLng? toCoord;
+    if (_fromSelectedLat != null && _fromSelectedLng != null) {
+      fromCoord = LatLng(_fromSelectedLat!, _fromSelectedLng!);
+      print('DEBUG: Using _fromSelectedLat/Lng for fromCoord');
+    } else {
+      fromCoord = await getLatLng(fromInput);
+    }
+    if (_toSelectedLat != null && _toSelectedLng != null) {
+      toCoord = LatLng(_toSelectedLat!, _toSelectedLng!);
+      print('DEBUG: Using _toSelectedLat/Lng for toCoord');
+    } else {
+      toCoord = await getLatLng(toInput);
+    }
+    print('DEBUG: fromCoord = ${fromCoord?.latitude}, ${fromCoord?.longitude}');
+    print('DEBUG: toCoord = ${toCoord?.latitude}, ${toCoord?.longitude}');
     if (fromCoord == null || toCoord == null) {
+      print('DEBUG: One or both coordinates are null.');
       setState(() {
         _routeOptions.clear();
         _showRouteResults = true;
@@ -317,144 +349,16 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // 2. Fetch stops from Firestore
-    final stopsSnapshot = await FirebaseFirestore.instance
-        .collection('stops')
-        .get();
-    final stops = <String, Map<String, dynamic>>{};
-    for (var doc in stopsSnapshot.docs) {
-      final data = doc.data();
-      stops[doc.id] = {
-        'id': doc.id,
-        'name': data['name'] ?? '',
-        'lat': data['lat']?.toDouble() ?? 0,
-        'lng': data['lng']?.toDouble() ?? 0,
-      };
-    }
-    if (stops.isEmpty) {
-      setState(() {
-        _routeOptions.clear();
-        _showRouteResults = true;
-      });
-      return;
-    }
-
-    // 3. Find nearest stop to fromCoord and toCoord
-    String? nearestFromStopId;
-    String? nearestToStopId;
-    double minFromDist = double.infinity;
-    double minToDist = double.infinity;
-    stops.forEach((id, stop) {
-      final lat = stop['lat'] as double;
-      final lng = stop['lng'] as double;
-      final fromDist = haversine(
-        fromCoord.latitude,
-        fromCoord.longitude,
-        lat,
-        lng,
-      );
-      if (fromDist < minFromDist) {
-        minFromDist = fromDist;
-        nearestFromStopId = id;
-      }
-      final toDist = haversine(toCoord.latitude, toCoord.longitude, lat, lng);
-      if (toDist < minToDist) {
-        minToDist = toDist;
-        nearestToStopId = id;
-      }
-    });
-
-    if (nearestFromStopId == null || nearestToStopId == null) {
-      setState(() {
-        _routeOptions.clear();
-        _showRouteResults = true;
-      });
-      return;
-    }
-
-    // 4. Find all routes that include both stops
-    final routeStopsSnapshot = await FirebaseFirestore.instance
-        .collection('route_stops')
-        .get();
-    // Map routeId -> list of stopIds (ordered)
-    final Map<String, List<String>> routeToStops = {};
-    for (var doc in routeStopsSnapshot.docs) {
-      final data = doc.data();
-      final routeId = data['route_id'];
-      final stopId = data['stop_id'];
-      if (routeId != null && stopId != null) {
-        routeToStops.putIfAbsent(routeId, () => []).add(stopId);
-      }
-    }
-
-    // Find routes that contain both stops
-    final matchingRouteIds = routeToStops.entries
-        .where((entry) {
-          final stopsList = entry.value;
-          return stopsList.contains(nearestFromStopId) &&
-              stopsList.contains(nearestToStopId);
-        })
-        .map((e) => e.key)
-        .toList();
-
-    if (matchingRouteIds.isEmpty) {
-      setState(() {
-        _routeOptions.clear();
-        _showRouteResults = true;
-      });
-      return;
-    }
-
-    // 5. Fetch route details
-    final routesSnapshot = await FirebaseFirestore.instance
-        .collection('routes')
-        .get();
-    final matchingRoutes = routesSnapshot.docs
-        .where((doc) => matchingRouteIds.contains(doc.id))
-        .toList();
-
-    // 6. Build RouteOption(s)
-    List<RouteOption> options = matchingRoutes.map((doc) {
-      final data = doc.data();
-      final routeId = doc.id;
-      final stopsList = routeToStops[routeId] ?? [];
-      // Build routePath as list of RoutePoint from stopsList
-      List<RoutePoint> routePath = stopsList.map((sid) {
-        final stop = stops[sid];
-        return RoutePoint(
-          latitude: stop?['lat'] ?? 0,
-          longitude: stop?['lng'] ?? 0,
-        );
-      }).toList();
-      // Use static fares for now
-      double regularFare = 15.0;
-      double discountedFare = 12.0;
-      // Segments and timeline (simple demo)
-      final segments = [
-        TransportSegment(icon: Icons.directions_walk, type: 'Walk'),
-        TransportSegment(icon: Icons.directions_bus, type: 'Jeepney'),
-      ];
-      final timeline = [
-        TimelinePoint(label: 'Start', time: '8:00 am'),
-        TimelinePoint(
-          label: 'Checkpoint 1',
-          time: '8:10 am',
-          isCheckpoint: true,
-        ),
-        TimelinePoint(label: 'Destination', time: '8:20 am'),
-      ];
-      return RouteOption(
-        routeId: routeId,
-        routePath: routePath,
-        duration: (data['duration']?.toString() ?? '20') + ' mins',
-        regularFare: regularFare,
-        discountedFare: discountedFare,
-        segments: segments,
-        timeline: timeline,
-      );
-    }).toList();
+    // Call the service
+    final options = await findRoutes(
+      fromCoord.latitude,
+      fromCoord.longitude,
+      toCoord.latitude,
+      toCoord.longitude,
+    );
 
     setState(() {
+      print('Matched route count: ${options.length}');
       _routeOptions
         ..clear()
         ..addAll(options);

@@ -81,7 +81,11 @@ Future<List<RouteOption>> findRoutes(
     final List<Map<String, dynamic>> routePathCoords = routePathList
         .whereType<Map<String, dynamic>>()
         .toList();
-    print('DEBUG: Route $routeId has ${routePathCoords.length} coordinates');
+    // Skip routes with fewer than 2 coordinates (no path to calculate distance)
+    if (routePathCoords.length < 2) {
+      print('DEBUG: Route $routeId skipped due to insufficient coordinates');
+      return;
+    }
 
     // Check proximity to origin and destination
     double minOriginDist = double.infinity;
@@ -117,12 +121,12 @@ Future<List<RouteOption>> findRoutes(
           (pt2['longitude'] as num).toDouble(),
         );
       }
-      // Estimate times (walking: 80m/min, jeep: 250m/min)
-      final walkingTime = (walkingDistance / 80).ceil();
-      final jeepTime = (jeepDistance / 250).ceil();
+      // Estimate times
+      final walkingTime = (walkingDistance / 100).ceil();
+      final jeepTime = (jeepDistance / 300).ceil();
       // Fares (distance-based, lookup exact km)
       final distanceKm = jeepDistance / 1000.0;
-      final km = distanceKm.ceil();
+      final km = max(1, distanceKm.ceil()); // Ensure at least 1 km
       final fareKey = '${fareType}_${km}';
       print(
         'DEBUG: Route $routeId - jeepDistance: $jeepDistance m, km: $km, fareKey: $fareKey',
@@ -132,6 +136,9 @@ Future<List<RouteOption>> findRoutes(
       print(
         'DEBUG: Fare found: ${routeFares.containsKey(fareKey)}, regular: ${fareMap['regular']}, discounted: ${fareMap['discounted']}',
       );
+      // Calculate total duration in minutes
+      final totalDurationMinutes = walkingTime + jeepTime;
+      final currentTime = DateTime.now();
       // RoutePath for UI (as RoutePoint)
       final routePath = routePathCoords
           .map(
@@ -142,15 +149,53 @@ Future<List<RouteOption>> findRoutes(
           )
           .toList();
       // Segments for UI (walk + jeep)
-      final segments = [
-        TransportSegment(icon: Icons.directions_walk, type: 'Walk'),
+      final segments = <TransportSegment>[];
+      if (walkingDistance > 0) {
+        segments.add(
+          TransportSegment(icon: Icons.directions_walk, type: 'Walk'),
+        );
+      }
+      segments.add(
         TransportSegment(icon: Icons.directions_bus, type: 'Jeepney'),
-      ];
-      // Timeline for UI (start, destination)
-      final timeline = <TimelinePoint>[
-        TimelinePoint(label: 'Start', time: ''),
-        TimelinePoint(label: 'Destination', time: ''),
-      ];
+      );
+      // Timeline for UI (with times: start = now, checkpoints cumulative, destination = ETA)
+      final timeline = <TimelinePoint>[];
+      DateTime cumulativeTime = currentTime;
+      timeline.add(
+        TimelinePoint(
+          label: 'Start',
+          time:
+              '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
+        ),
+      );
+
+      if (walkingDistance > 0) {
+        cumulativeTime = cumulativeTime.add(Duration(minutes: walkingTime));
+        timeline.add(
+          TimelinePoint(
+            label: 'Walk to Route',
+            time:
+                '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
+          ),
+        );
+      }
+
+      cumulativeTime = cumulativeTime.add(Duration(minutes: jeepTime));
+      timeline.add(
+        TimelinePoint(
+          label: 'Jeepney',
+          time:
+              '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
+        ),
+      );
+
+      timeline.add(
+        TimelinePoint(
+          label: 'Destination',
+          time:
+              '${currentTime.add(Duration(minutes: totalDurationMinutes)).hour.toString().padLeft(2, '0')}:${currentTime.add(Duration(minutes: totalDurationMinutes)).minute.toString().padLeft(2, '0')} (ETA)',
+        ),
+      );
       options.add(
         RouteOption(
           routeId: routeId,
