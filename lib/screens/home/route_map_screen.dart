@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../widgets/map_widget.dart';
 import '../models/route_option.dart';
-// ...existing code...
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RouteMapScreen extends StatefulWidget {

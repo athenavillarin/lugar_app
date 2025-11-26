@@ -24,12 +24,9 @@ class NominatimPlace {
 class NominatimService {
   static Future<List<NominatimPlace>> searchPlaces(String query) async {
     // Always bias search to Iloilo City, Iloilo, Philippines
-    final String iloiloQuery = '$query, Iloilo City, Iloilo, Philippines';
-    // Optionally, use a viewbox to further restrict results to Iloilo area
-    // Viewbox: left,top,right,bottom (approximate bounds for Iloilo City)
-    final String viewbox = '122.515,10.745,122.605,10.675';
+    final String iloiloQuery = '$query, Iloilo City, Iloilo, Philippines';
     final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(iloiloQuery)}&format=json&addressdetails=1&limit=10&viewbox=$viewbox&bounded=1&email=your@email.com',
+      'http://10.0.2.2:8090/search?q=${Uri.encodeComponent(iloiloQuery)}&format=json',
     );
     final response = await http.get(
       url,
