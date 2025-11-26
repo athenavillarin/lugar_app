@@ -204,9 +204,10 @@ class RouteSheet extends StatelessWidget {
                                       onTap: () {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
-                                            builder: (_) => RouteDetailScreen(
-                                              routeOption: route,
-                                            ),
+                                            builder: (_) =>
+                                                RouteDetailScreenClean(
+                                                  routeOption: route,
+                                                ),
                                           ),
                                         );
                                       },
@@ -504,5 +505,3 @@ class _FindRouteButton extends StatelessWidget {
     );
   }
 }
-
-// (No data yet) placeholders removed from separate widget to simplify layout.
