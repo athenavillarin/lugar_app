@@ -64,7 +64,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
       final stopId = data['stop_id'];
       if (stopId != null) stopOrder.add(stopId);
     }
-    // For demo: alternate walk/jeep for each stop (replace with real segment logic as needed)
+
     List<Marker> markers = [];
     for (int i = 0; i < stopOrder.length; i++) {
       final stopId = stopOrder[i];
@@ -237,9 +237,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                                 ),
                                 child: IconButton(
                                   icon: const Icon(Icons.star_border),
-                                  onPressed: () {
-                                    // TODO: Add to favorites
-                                  },
+                                  onPressed: () {},
                                   color: theme.colorScheme.onSurface,
                                   iconSize: 24,
                                 ),

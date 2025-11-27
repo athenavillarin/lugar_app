@@ -19,6 +19,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  void _clearFromToFields() {
+    setState(() {
+      _fromController.clear();
+      _toController.clear();
+      _showRouteResults = false;
+    });
+  }
+
   Future<void> _setCurrentLocation({required bool isFrom}) async {
     // Check location permission
     var status = await Permission.location.status;
@@ -507,6 +515,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
               sheetController: _sheetController,
+              onFindNewRoute: _clearFromToFields,
             ),
           ],
         ),

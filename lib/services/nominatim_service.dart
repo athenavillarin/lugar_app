@@ -23,11 +23,10 @@ class NominatimPlace {
 
 class NominatimService {
   static Future<List<NominatimPlace>> searchPlaces(String query) async {
-    // Always bias search to Iloilo City, Iloilo, Philippines
+    // Search without biasing since OSM data is already for Iloilo
     Future<List<NominatimPlace>> doSearch(String q) async {
-      final String iloiloQuery = '$q, Iloilo City, Iloilo, Philippines';
       final url = Uri.parse(
-        'https://6a44cc5e466d.ngrok-free.app/search?q=${Uri.encodeComponent(iloiloQuery)}&format=json',
+        'https://a5fd03e26b68.ngrok-free.app/search?q=${Uri.encodeComponent(q)}&format=json',
       );
       print('DEBUG: NominatimService.searchPlaces url = $url');
       final response = await http
@@ -84,5 +83,34 @@ class NominatimService {
     // No results found
     print('DEBUG: NominatimService.searchPlaces: all fallbacks failed');
     return [];
+  }
+
+  static Future<NominatimPlace?> reverseGeocode(double lat, double lon) async {
+    final url = Uri.parse(
+      'https://a5fd03e26b68.ngrok-free.app/reverse?lat=$lat&lon=$lon&format=json',
+    );
+    print('DEBUG: NominatimService.reverseGeocode url = $url');
+    try {
+      final response = await http
+          .get(url, headers: {'User-Agent': 'lugar_app_school_project/1.0'})
+          .timeout(Duration(seconds: 5));
+      print(
+        'DEBUG: NominatimService.reverseGeocode status = ${response.statusCode}',
+      );
+      print(
+        'DEBUG: NominatimService.reverseGeocode raw body = ${response.body}',
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic> && data.containsKey('display_name')) {
+          print('DEBUG: NominatimService.reverseGeocode parsed place');
+          return NominatimPlace.fromJson(data);
+        }
+      }
+    } catch (e) {
+      print('DEBUG: NominatimService.reverseGeocode error: $e');
+    }
+    print('DEBUG: NominatimService.reverseGeocode failed');
+    return null;
   }
 }

@@ -28,6 +28,28 @@ class MapWidget extends StatefulWidget {
 
 class _MapWidgetState extends State<MapWidget> {
   LatLng? selectedLocation;
+  late final MapController _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  bool _hasCentered = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasCentered) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          _mapController.move(widget.center, widget.zoom);
+        } catch (e) {}
+      });
+      _hasCentered = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,9 +71,10 @@ class _MapWidgetState extends State<MapWidget> {
     return Stack(
       children: [
         FlutterMap(
+          mapController: _mapController,
           options: MapOptions(
-            initialCenter: widget.center,
-            initialZoom: widget.zoom,
+            center: widget.center,
+            zoom: widget.zoom,
             onTap: widget.isSelectionMode
                 ? (tapPosition, latLng) {
                     setState(() {
@@ -66,9 +89,9 @@ class _MapWidgetState extends State<MapWidget> {
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.lugar_app',
             ),
-            MarkerLayer(markers: displayMarkers),
             if (widget.polylines.isNotEmpty)
               PolylineLayer(polylines: widget.polylines),
+            MarkerLayer(markers: displayMarkers),
           ],
         ),
 
