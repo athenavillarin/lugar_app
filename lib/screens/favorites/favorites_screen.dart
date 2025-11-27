@@ -209,14 +209,26 @@ class FavoriteCard extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    const Icon(Icons.directions_walk, size: 20),
-                                    const SizedBox(width: 8),
-                                    const Icon(Icons.directions_bus, size: 20),
-                                  ],
-                                ),
+                                () {
+                                  final hasWalk = favorite.checkpoints.any(
+                                    (c) => c.contains('Walk'),
+                                  );
+                                  return Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      if (hasWalk)
+                                        const Icon(
+                                          Icons.directions_walk,
+                                          size: 20,
+                                        ),
+                                      if (hasWalk) const SizedBox(width: 8),
+                                      const Icon(
+                                        Icons.directions_bus,
+                                        size: 20,
+                                      ),
+                                    ],
+                                  );
+                                }(),
                                 const SizedBox(height: 8),
                                 Text(
                                   'P ${favorite.price.toStringAsFixed(2)}',
