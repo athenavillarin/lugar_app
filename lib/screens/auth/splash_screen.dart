@@ -77,13 +77,13 @@ class SplashScreen extends StatelessWidget {
                             states,
                           ) {
                             if (states.contains(WidgetState.pressed)) {
-                              return theme.textTheme.bodyMedium?.color;
+                              return theme.colorScheme.onSurface;
                             }
                             return theme.colorScheme.onPrimary;
                           }),
                           elevation: WidgetStateProperty.all(6),
                           shadowColor: WidgetStateProperty.all(
-                            theme.colorScheme.primary.withOpacity(0.3),
+                            theme.colorScheme.primary.withValues(alpha: 0.3),
                           ),
                           shape: WidgetStateProperty.all(
                             RoundedRectangleBorder(
