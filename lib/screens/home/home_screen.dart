@@ -9,6 +9,7 @@ import '../../services/nominatim_service.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/route_option.dart';
 import '../../services/route_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,9 +20,75 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Future<void> _setCurrentLocation({required bool isFrom}) async {
+    // Check location permission
+    var status = await Permission.location.status;
+    if (status.isDenied) {
+      // Request permission
+      status = await Permission.location.request();
+      if (status.isDenied) {
+        // Show dialog to guide to settings
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Location Permission Required'),
+              content: const Text(
+                'Location permission is needed to get your current location. Please enable it in app settings.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    openAppSettings();
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Open Settings'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    if (status.isPermanentlyDenied) {
+      // Guide to settings
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Location Permission Required'),
+            content: const Text(
+              'Location permission is permanently denied. Please enable it in app settings.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  openAppSettings();
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Open Settings'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
     try {
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       final lat = position.latitude;
       final lng = position.longitude;

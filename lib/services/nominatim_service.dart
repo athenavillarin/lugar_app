@@ -30,10 +30,9 @@ class NominatimService {
         'https://6a44cc5e466d.ngrok-free.app/search?q=${Uri.encodeComponent(iloiloQuery)}&format=json',
       );
       print('DEBUG: NominatimService.searchPlaces url = $url');
-      final response = await http.get(
-        url,
-        headers: {'User-Agent': 'lugar_app_school_project/1.0'},
-      );
+      final response = await http
+          .get(url, headers: {'User-Agent': 'lugar_app_school_project/1.0'})
+          .timeout(Duration(seconds: 5));
       print(
         'DEBUG: NominatimService.searchPlaces status = ${response.statusCode}',
       );

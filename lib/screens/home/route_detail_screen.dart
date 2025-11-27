@@ -268,7 +268,7 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceVariant
+                              color: theme.colorScheme.surfaceContainerHighest
                                   .withOpacity(0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),

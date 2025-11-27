@@ -77,7 +77,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         await favoritesProvider.deleteFavorite(fav.id);
                       },
                     );
-                  }).toList(),
+                  }),
                   const SizedBox(height: 80),
                 ],
               ),

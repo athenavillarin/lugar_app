@@ -47,7 +47,7 @@ Future<List<RouteOption>> findRoutes(
     final fareType = data['fare_type'];
     final distanceKm = data['distance_km'];
     if (fareType != null && distanceKm != null) {
-      final key = '${fareType}_${distanceKm}';
+      final key = '${fareType}_$distanceKm';
       routeFares[key] = {
         'regular': (data['regular'] as num?)?.toDouble() ?? 0.0,
         'discounted': (data['discounted'] as num?)?.toDouble() ?? 0.0,
@@ -55,39 +55,94 @@ Future<List<RouteOption>> findRoutes(
     }
   }
 
-  // 3. Find routes where route_path passes near both origin and destination
-  const double proximityThreshold = 300.0; // meters
+  // 3. Find routes near origin and near destination (allow transfers)
+  const double proximityThreshold = 400.0; // meters
   List<RouteOption> options = [];
-  int routesChecked = 0;
-  int routesWithPath = 0;
-  int routesNearOrigin = 0;
-  int routesNearBoth = 0;
+
+  // Find routes near origin
+  List<String> originRoutes = [];
   routes.forEach((routeId, routeData) {
-    routesChecked++;
     final dynamic routePathRaw = routeData['route_path'];
-    if (routePathRaw is! List<dynamic>) {
-      print('DEBUG: Route $routeId route_path is not a list: $routePathRaw');
-      return;
-    }
+    if (routePathRaw is! List<dynamic>) return;
     final List<dynamic> routePathList = routePathRaw;
-    if (routePathList.isEmpty) {
-      print('DEBUG: Route $routeId has empty route_path');
-      return;
-    }
-    routesWithPath++;
-
-    final fareType = 'PUJ_MOD'; // Assume MOD for now; both types available
-
+    if (routePathList.isEmpty) return;
     final List<Map<String, dynamic>> routePathCoords = routePathList
         .whereType<Map<String, dynamic>>()
         .toList();
-    // Skip routes with fewer than 2 coordinates (no path to calculate distance)
-    if (routePathCoords.length < 2) {
-      print('DEBUG: Route $routeId skipped due to insufficient coordinates');
-      return;
-    }
+    if (routePathCoords.length < 2) return;
 
-    // Check proximity to origin and destination
+    double minOriginDist = double.infinity;
+    for (var pt in routePathCoords) {
+      final lat = (pt['latitude'] as num).toDouble();
+      final lng = (pt['longitude'] as num).toDouble();
+      final dist = haversine(originLat, originLng, lat, lng);
+      if (dist < minOriginDist) minOriginDist = dist;
+    }
+    if (minOriginDist <= proximityThreshold) {
+      originRoutes.add(routeId);
+    }
+  });
+
+  // Find routes near destination
+  List<String> destRoutes = [];
+  routes.forEach((routeId, routeData) {
+    final dynamic routePathRaw = routeData['route_path'];
+    if (routePathRaw is! List<dynamic>) return;
+    final List<dynamic> routePathList = routePathRaw;
+    if (routePathList.isEmpty) return;
+    final List<Map<String, dynamic>> routePathCoords = routePathList
+        .whereType<Map<String, dynamic>>()
+        .toList();
+    if (routePathCoords.length < 2) return;
+
+    double minDestDist = double.infinity;
+    for (var pt in routePathCoords) {
+      final lat = (pt['latitude'] as num).toDouble();
+      final lng = (pt['longitude'] as num).toDouble();
+      final dist = haversine(destLat, destLng, lat, lng);
+      if (dist < minDestDist) minDestDist = dist;
+    }
+    if (minDestDist <= proximityThreshold) {
+      destRoutes.add(routeId);
+    }
+  });
+
+  print(
+    'DEBUG: Routes near origin: ${originRoutes.length}, near dest: ${destRoutes.length}',
+  );
+  print('DEBUG: Origin routes: $originRoutes');
+  print('DEBUG: Dest routes: $destRoutes');
+
+  // For now, simple: if same route covers both, use it; else, check for split routes (e.g., R001A and R001B)
+  Set<String> commonRoutes = originRoutes.toSet().intersection(
+    destRoutes.toSet(),
+  );
+  if (commonRoutes.isEmpty) {
+    // Check for split routes: if origin has RXXXA, dest has RXXXB, treat as connected
+    for (String o in originRoutes) {
+      for (String d in destRoutes) {
+        if (o != d &&
+            o.replaceAll(RegExp(r'[AB]$'), '') ==
+                d.replaceAll(RegExp(r'[AB]$'), '')) {
+          commonRoutes.add(o); // Use the origin one
+          break;
+        }
+      }
+      if (commonRoutes.isNotEmpty) break;
+    }
+  }
+  if (commonRoutes.isNotEmpty) {
+    // Use the first common route
+    String routeId = commonRoutes.first;
+    // Reuse existing logic for that route
+    final routeData = routes[routeId]!;
+    final dynamic routePathRaw = routeData['route_path'];
+    final List<dynamic> routePathList = routePathRaw;
+    final List<Map<String, dynamic>> routePathCoords = routePathList
+        .whereType<Map<String, dynamic>>()
+        .toList();
+
+    // Find closest points
     double minOriginDist = double.infinity;
     double minDestDist = double.infinity;
     int originClosestIndex = -1;
@@ -108,139 +163,109 @@ Future<List<RouteOption>> findRoutes(
       }
     }
 
-    print(
-      'DEBUG: Route $routeId - minOriginDist: $minOriginDist, minDestDist: $minDestDist',
+    // Compute as before
+    final walkingDistanceOrigin = minOriginDist <= 50 ? 0 : minOriginDist;
+    final walkingDistanceDest = minDestDist <= 50 ? 0 : minDestDist;
+    final walkingDistance = walkingDistanceOrigin + walkingDistanceDest;
+    int startIndex = min(originClosestIndex, destClosestIndex);
+    int endIndex = max(originClosestIndex, destClosestIndex);
+    double jeepDistance = 0.0;
+    for (int i = startIndex; i < endIndex; i++) {
+      final pt1 = routePathCoords[i];
+      final pt2 = routePathCoords[i + 1];
+      jeepDistance += haversine(
+        (pt1['latitude'] as num).toDouble(),
+        (pt1['longitude'] as num).toDouble(),
+        (pt2['latitude'] as num).toDouble(),
+        (pt2['longitude'] as num).toDouble(),
+      );
+    }
+    final walkingTime = (walkingDistance / 100).ceil();
+    final jeepTime = (jeepDistance / 300).ceil();
+    final distanceKm = jeepDistance / 1000.0;
+    final km = max(1, distanceKm.ceil());
+    final fareType = 'PUJ_MOD';
+    final fareKey = '${fareType}_$km';
+    final fareMap = routeFares[fareKey] ?? {'regular': 0.0, 'discounted': 0.0};
+    final currentTime = DateTime.now();
+    final routePath = routePathCoords
+        .sublist(startIndex, endIndex + 1)
+        .map(
+          (pt) => RoutePoint(
+            latitude: (pt['latitude'] as num).toDouble(),
+            longitude: (pt['longitude'] as num).toDouble(),
+          ),
+        )
+        .toList();
+    final segments = <TransportSegment>[];
+    if (walkingDistanceOrigin > 0)
+      segments.add(TransportSegment(icon: Icons.directions_walk, type: 'Walk'));
+    segments.add(TransportSegment(icon: Icons.directions_bus, type: 'Jeepney'));
+    if (walkingDistanceDest > 0)
+      segments.add(TransportSegment(icon: Icons.directions_walk, type: 'Walk'));
+    final timeline = <TimelinePoint>[];
+    DateTime cumulativeTime = currentTime;
+    timeline.add(
+      TimelinePoint(
+        label: 'Start',
+        time:
+            '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
+      ),
     );
-
-    if (minOriginDist <= proximityThreshold) routesNearOrigin++;
-    if (minOriginDist <= proximityThreshold &&
-        minDestDist <= proximityThreshold) {
-      routesNearBoth++;
-      // Compute walking distance (only if away from route)
-      final walkingDistanceOrigin = minOriginDist <= 50 ? 0 : minOriginDist;
-      final walkingDistanceDest = minDestDist <= 50 ? 0 : minDestDist;
-      final walkingDistance = walkingDistanceOrigin + walkingDistanceDest;
-      // Compute jeepney distance (segment between closest points)
-      int startIndex = min(originClosestIndex, destClosestIndex);
-      int endIndex = max(originClosestIndex, destClosestIndex);
-      double jeepDistance = 0.0;
-      for (int i = startIndex; i < endIndex; i++) {
-        final pt1 = routePathCoords[i];
-        final pt2 = routePathCoords[i + 1];
-        jeepDistance += haversine(
-          (pt1['latitude'] as num).toDouble(),
-          (pt1['longitude'] as num).toDouble(),
-          (pt2['latitude'] as num).toDouble(),
-          (pt2['longitude'] as num).toDouble(),
-        );
-      }
-      // Estimate times
-      final walkingTime = (walkingDistance / 100).ceil();
-      final jeepTime = (jeepDistance / 300).ceil();
-      // Fares (distance-based, lookup exact km)
-      final distanceKm = jeepDistance / 1000.0;
-      final km = max(1, distanceKm.ceil()); // Ensure at least 1 km
-      final fareKey = '${fareType}_${km}';
-      print(
-        'DEBUG: Route $routeId - jeepDistance: $jeepDistance m, km: $km, fareKey: $fareKey',
+    if (walkingDistanceOrigin > 0) {
+      cumulativeTime = cumulativeTime.add(
+        Duration(minutes: (walkingDistanceOrigin / 100).ceil()),
       );
-      final fareMap =
-          routeFares[fareKey] ?? {'regular': 0.0, 'discounted': 0.0};
-      print(
-        'DEBUG: Fare found: ${routeFares.containsKey(fareKey)}, regular: ${fareMap['regular']}, discounted: ${fareMap['discounted']}',
-      );
-      final currentTime = DateTime.now();
-      // RoutePath for UI (segment as RoutePoint)
-      final routePath = routePathCoords
-          .sublist(startIndex, endIndex + 1)
-          .map(
-            (pt) => RoutePoint(
-              latitude: (pt['latitude'] as num).toDouble(),
-              longitude: (pt['longitude'] as num).toDouble(),
-            ),
-          )
-          .toList();
-      // Segments for UI (walk + jeep + walk)
-      final segments = <TransportSegment>[];
-      if (walkingDistanceOrigin > 0) {
-        segments.add(
-          TransportSegment(icon: Icons.directions_walk, type: 'Walk'),
-        );
-      }
-      segments.add(
-        TransportSegment(icon: Icons.directions_bus, type: 'Jeepney'),
-      );
-      if (walkingDistanceDest > 0) {
-        segments.add(
-          TransportSegment(icon: Icons.directions_walk, type: 'Walk'),
-        );
-      }
-      // Timeline for UI (with times: start = now, checkpoints cumulative, destination = ETA)
-      final timeline = <TimelinePoint>[];
-      DateTime cumulativeTime = currentTime;
       timeline.add(
         TimelinePoint(
-          label: 'Start',
+          label: 'Walk to Route',
           time:
               '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
-        ),
-      );
-
-      if (walkingDistanceOrigin > 0) {
-        cumulativeTime = cumulativeTime.add(
-          Duration(minutes: (walkingDistanceOrigin / 100).ceil()),
-        );
-        timeline.add(
-          TimelinePoint(
-            label: 'Walk to Route',
-            time:
-                '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
-          ),
-        );
-      }
-
-      cumulativeTime = cumulativeTime.add(Duration(minutes: jeepTime));
-      timeline.add(
-        TimelinePoint(
-          label: 'Jeepney',
-          time:
-              '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
-        ),
-      );
-
-      if (walkingDistanceDest > 0) {
-        cumulativeTime = cumulativeTime.add(
-          Duration(minutes: (walkingDistanceDest / 100).ceil()),
-        );
-        timeline.add(
-          TimelinePoint(
-            label: 'Walk to Destination',
-            time:
-                '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
-          ),
-        );
-      }
-
-      timeline.add(
-        TimelinePoint(
-          label: 'Destination',
-          time:
-              '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')} (ETA)',
-        ),
-      );
-      options.add(
-        RouteOption(
-          routeId: routeId,
-          routePath: routePath,
-          duration: '${walkingTime + jeepTime} mins',
-          regularFare: fareMap['regular']!,
-          discountedFare: fareMap['discounted']!,
-          segments: segments,
-          timeline: timeline,
         ),
       );
     }
-  });
+    cumulativeTime = cumulativeTime.add(Duration(minutes: jeepTime));
+    timeline.add(
+      TimelinePoint(
+        label: 'Jeepney',
+        time:
+            '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
+      ),
+    );
+    if (walkingDistanceDest > 0) {
+      cumulativeTime = cumulativeTime.add(
+        Duration(minutes: (walkingDistanceDest / 100).ceil()),
+      );
+      timeline.add(
+        TimelinePoint(
+          label: 'Walk to Destination',
+          time:
+              '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
+        ),
+      );
+    }
+    timeline.add(
+      TimelinePoint(
+        label: 'Destination',
+        time:
+            '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')} (ETA)',
+      ),
+    );
+    options.add(
+      RouteOption(
+        routeId: routeId,
+        routePath: routePath,
+        duration: '${walkingTime + jeepTime} mins',
+        regularFare: fareMap['regular']!,
+        discountedFare: fareMap['discounted']!,
+        segments: segments,
+        timeline: timeline,
+      ),
+    );
+  } else {
+    // Placeholder for transfer: for now, no routes
+    print('DEBUG: No direct routes; transfers not implemented yet');
+  }
 
   // Sort by total travel time (ascending)
   options.sort((a, b) {
