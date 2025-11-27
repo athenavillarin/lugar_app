@@ -27,7 +27,7 @@ class NominatimService {
     Future<List<NominatimPlace>> doSearch(String q) async {
       final String iloiloQuery = '$q, Iloilo City, Iloilo, Philippines';
       final url = Uri.parse(
-        'https://229d51374f89.ngrok-free.app/search?q=${Uri.encodeComponent(iloiloQuery)}&format=json',
+        'https://6a44cc5e466d.ngrok-free.app/search?q=${Uri.encodeComponent(iloiloQuery)}&format=json',
       );
       print('DEBUG: NominatimService.searchPlaces url = $url');
       final response = await http.get(

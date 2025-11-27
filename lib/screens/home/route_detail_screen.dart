@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/route_option.dart';
@@ -62,26 +64,62 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
   }
 
   Future<void> _checkFavorite() async {
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('favorites')
-          .doc(widget.routeOption.routeId)
-          .get();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('favorites')
+            .doc(widget.routeOption.routeId)
+            .get();
 
-      setState(() => _isFavorite = doc.exists);
-    } catch (_) {}
+        setState(() => _isFavorite = doc.exists);
+      } catch (_) {}
+    } else {
+      // Check local storage for guests
+      final prefs = await SharedPreferences.getInstance();
+      final favorites = prefs.getStringList('guest_favorites') ?? [];
+      setState(
+        () => _isFavorite = favorites.contains(widget.routeOption.routeId),
+      );
+    }
   }
 
   Future<void> _toggleFavorite() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
     setState(() => _isFavorite = !_isFavorite);
 
     final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
         .collection('favorites')
         .doc(widget.routeOption.routeId);
 
     try {
       if (_isFavorite) {
-        await ref.set({'favoritedAt': FieldValue.serverTimestamp()});
+        // Parse duration
+        final durationMatch = RegExp(
+          r'(\d+)',
+        ).firstMatch(widget.routeOption.duration);
+        final durationMinutes = durationMatch != null
+            ? int.parse(durationMatch.group(1)!)
+            : 30;
+
+        // Extract checkpoints from timeline
+        final checkpoints = widget.routeOption.timeline
+            .map((t) => t.label)
+            .toList();
+
+        await ref.set({
+          'title': _routeName ?? 'Route ${widget.routeOption.routeId}',
+          'durationMinutes': durationMinutes,
+          'price': widget.routeOption.regularFare,
+          'checkpoints': checkpoints,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
       } else {
         await ref.delete();
       }

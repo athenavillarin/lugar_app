@@ -56,7 +56,7 @@ Future<List<RouteOption>> findRoutes(
   }
 
   // 3. Find routes where route_path passes near both origin and destination
-  const double proximityThreshold = 5000.0; // meters
+  const double proximityThreshold = 300.0; // meters
   List<RouteOption> options = [];
   int routesChecked = 0;
   int routesWithPath = 0;
@@ -90,13 +90,22 @@ Future<List<RouteOption>> findRoutes(
     // Check proximity to origin and destination
     double minOriginDist = double.infinity;
     double minDestDist = double.infinity;
-    for (final pt in routePathCoords) {
+    int originClosestIndex = -1;
+    int destClosestIndex = -1;
+    for (int i = 0; i < routePathCoords.length; i++) {
+      final pt = routePathCoords[i];
       final lat = (pt['latitude'] as num).toDouble();
       final lng = (pt['longitude'] as num).toDouble();
       final originDist = haversine(originLat, originLng, lat, lng);
-      if (originDist < minOriginDist) minOriginDist = originDist;
+      if (originDist < minOriginDist) {
+        minOriginDist = originDist;
+        originClosestIndex = i;
+      }
       final destDist = haversine(destLat, destLng, lat, lng);
-      if (destDist < minDestDist) minDestDist = destDist;
+      if (destDist < minDestDist) {
+        minDestDist = destDist;
+        destClosestIndex = i;
+      }
     }
 
     print(
@@ -107,11 +116,15 @@ Future<List<RouteOption>> findRoutes(
     if (minOriginDist <= proximityThreshold &&
         minDestDist <= proximityThreshold) {
       routesNearBoth++;
-      // Compute walking distance (min to route)
-      final walkingDistance = minOriginDist;
-      // Compute jeepney distance (total route length)
+      // Compute walking distance (only if away from route)
+      final walkingDistanceOrigin = minOriginDist <= 50 ? 0 : minOriginDist;
+      final walkingDistanceDest = minDestDist <= 50 ? 0 : minDestDist;
+      final walkingDistance = walkingDistanceOrigin + walkingDistanceDest;
+      // Compute jeepney distance (segment between closest points)
+      int startIndex = min(originClosestIndex, destClosestIndex);
+      int endIndex = max(originClosestIndex, destClosestIndex);
       double jeepDistance = 0.0;
-      for (int i = 0; i < routePathCoords.length - 1; i++) {
+      for (int i = startIndex; i < endIndex; i++) {
         final pt1 = routePathCoords[i];
         final pt2 = routePathCoords[i + 1];
         jeepDistance += haversine(
@@ -136,11 +149,10 @@ Future<List<RouteOption>> findRoutes(
       print(
         'DEBUG: Fare found: ${routeFares.containsKey(fareKey)}, regular: ${fareMap['regular']}, discounted: ${fareMap['discounted']}',
       );
-      // Calculate total duration in minutes
-      final totalDurationMinutes = walkingTime + jeepTime;
       final currentTime = DateTime.now();
-      // RoutePath for UI (as RoutePoint)
+      // RoutePath for UI (segment as RoutePoint)
       final routePath = routePathCoords
+          .sublist(startIndex, endIndex + 1)
           .map(
             (pt) => RoutePoint(
               latitude: (pt['latitude'] as num).toDouble(),
@@ -148,9 +160,9 @@ Future<List<RouteOption>> findRoutes(
             ),
           )
           .toList();
-      // Segments for UI (walk + jeep)
+      // Segments for UI (walk + jeep + walk)
       final segments = <TransportSegment>[];
-      if (walkingDistance > 0) {
+      if (walkingDistanceOrigin > 0) {
         segments.add(
           TransportSegment(icon: Icons.directions_walk, type: 'Walk'),
         );
@@ -158,6 +170,11 @@ Future<List<RouteOption>> findRoutes(
       segments.add(
         TransportSegment(icon: Icons.directions_bus, type: 'Jeepney'),
       );
+      if (walkingDistanceDest > 0) {
+        segments.add(
+          TransportSegment(icon: Icons.directions_walk, type: 'Walk'),
+        );
+      }
       // Timeline for UI (with times: start = now, checkpoints cumulative, destination = ETA)
       final timeline = <TimelinePoint>[];
       DateTime cumulativeTime = currentTime;
@@ -169,8 +186,10 @@ Future<List<RouteOption>> findRoutes(
         ),
       );
 
-      if (walkingDistance > 0) {
-        cumulativeTime = cumulativeTime.add(Duration(minutes: walkingTime));
+      if (walkingDistanceOrigin > 0) {
+        cumulativeTime = cumulativeTime.add(
+          Duration(minutes: (walkingDistanceOrigin / 100).ceil()),
+        );
         timeline.add(
           TimelinePoint(
             label: 'Walk to Route',
@@ -189,11 +208,24 @@ Future<List<RouteOption>> findRoutes(
         ),
       );
 
+      if (walkingDistanceDest > 0) {
+        cumulativeTime = cumulativeTime.add(
+          Duration(minutes: (walkingDistanceDest / 100).ceil()),
+        );
+        timeline.add(
+          TimelinePoint(
+            label: 'Walk to Destination',
+            time:
+                '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
+          ),
+        );
+      }
+
       timeline.add(
         TimelinePoint(
           label: 'Destination',
           time:
-              '${currentTime.add(Duration(minutes: totalDurationMinutes)).hour.toString().padLeft(2, '0')}:${currentTime.add(Duration(minutes: totalDurationMinutes)).minute.toString().padLeft(2, '0')} (ETA)',
+              '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')} (ETA)',
         ),
       );
       options.add(
