@@ -186,44 +186,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildEmptyState(ThemeData theme) {
-    // Create placeholder data once
-    final placeholders = [
-      _PlaceholderData('4h ago', false),
-      _PlaceholderData('1d ago', false),
-      _PlaceholderData('3d ago', true),
-      _PlaceholderData('5d ago', true),
-      _PlaceholderData('1w ago', true),
-    ];
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: placeholders.length,
-      itemBuilder: (context, index) {
-        final placeholder = placeholders[index];
-        return _NotificationCard(
-          notification: AppNotification(
-            id: 'placeholder-$index',
-            title: 'Lorem Ipsum',
-            body:
-                'dolor sit amet, consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua...',
-            createdAt: DateTime.now(),
-            isRead: placeholder.isRead,
-          ),
-          timeAgo: placeholder.timeAgo,
-          showDeleteButton: _showDeleteButtons,
-          onTap: () {},
-          onDelete: () {},
-        );
-      },
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.notifications_none_outlined,
+              size: 64,
+              color: theme.textTheme.bodyLarge?.color?.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Notifications',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You have no notifications yet. Check back later for updates.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.textTheme.bodyLarge?.color?.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
-}
-
-class _PlaceholderData {
-  final String timeAgo;
-  final bool isRead;
-
-  _PlaceholderData(this.timeAgo, this.isRead);
 }
 
 class _NotificationCard extends StatelessWidget {
