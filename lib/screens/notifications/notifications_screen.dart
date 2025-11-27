@@ -78,6 +78,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       body: !_isInitialized
           ? const Center(child: CircularProgressIndicator())
+          : !notificationProvider.notificationsEnabled
+          ? _buildDisabledState(theme)
           : notificationProvider.notifications.isEmpty
           ? _buildEmptyState(theme)
           : RefreshIndicator(
@@ -144,6 +146,42 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildDisabledState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.notifications_off_outlined,
+              size: 64,
+              color: theme.textTheme.bodyLarge?.color?.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Notifications Disabled',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Enable notifications in your profile settings to receive traffic updates and alerts.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.textTheme.bodyLarge?.color?.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

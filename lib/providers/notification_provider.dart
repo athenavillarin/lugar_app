@@ -10,11 +10,19 @@ class NotificationProvider with ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
   int _localIdCounter = 0; // For generating local IDs
+  bool _notificationsEnabled = true; // Notification preferences
 
   List<AppNotification> get notifications => _notifications;
   bool get isLoading => _isLoading;
+  bool get notificationsEnabled => _notificationsEnabled;
 
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
+
+  // Toggle notification preferences
+  void setNotificationsEnabled(bool enabled) {
+    _notificationsEnabled = enabled;
+    notifyListeners();
+  }
 
   // Check if user is logged in
   bool get isLoggedIn => _auth.currentUser != null;
