@@ -31,8 +31,22 @@ class RoutePoint {
 class TransportSegment {
   final IconData icon;
   final String type;
+  final int startIndex;
+  final int endIndex;
 
-  const TransportSegment({required this.icon, required this.type});
+  final int durationMinutes;
+  final String? getOnLabel;
+  final String? getOffLabel;
+
+  const TransportSegment({
+    required this.icon,
+    required this.type,
+    required this.startIndex,
+    required this.endIndex,
+    required this.durationMinutes,
+    this.getOnLabel,
+    this.getOffLabel,
+  });
 }
 
 class TimelinePoint {

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/models/route_option.dart';
+import 'nominatim_service.dart';
 
 /// Finds the best jeepney routes between two coordinates
 /// Returns a sorted list of RouteOption objects (shortest travel time first)
@@ -25,7 +26,7 @@ Future<List<RouteOption>> findRoutes(
     return R * c;
   }
 
-  // 1. Fetch all routes
+  // 1. Fetch routes and fares from Firestore
   final routesSnapshot = await FirebaseFirestore.instance
       .collection('routes')
       .get();
@@ -33,29 +34,15 @@ Future<List<RouteOption>> findRoutes(
   for (var doc in routesSnapshot.docs) {
     routes[doc.id] = doc.data();
   }
-  print('DEBUG: Fetched ${routes.length} routes');
-  if (routes.isEmpty) return [];
-
-  // 2. Fetch fares (per fare_type and distance_km)
   final faresSnapshot = await FirebaseFirestore.instance
       .collection('fares')
       .get();
-  // Map: fareType_distanceKm -> {regular, discounted}
-  final Map<String, Map<String, double>> routeFares = {};
+  final routeFares = <String, Map<String, dynamic>>{};
   for (var doc in faresSnapshot.docs) {
-    final data = doc.data();
-    final fareType = data['fare_type'];
-    final distanceKm = data['distance_km'];
-    if (fareType != null && distanceKm != null) {
-      final key = '${fareType}_$distanceKm';
-      routeFares[key] = {
-        'regular': (data['regular'] as num?)?.toDouble() ?? 0.0,
-        'discounted': (data['discounted'] as num?)?.toDouble() ?? 0.0,
-      };
-    }
+    routeFares[doc.id] = doc.data();
   }
 
-  // 3. Find routes near origin and near destination (allow transfers)
+  // 2. Find routes near origin and near destination (allow transfers)
   const double proximityThreshold = 400.0; // meters
   List<RouteOption> options = [];
 
@@ -131,137 +118,282 @@ Future<List<RouteOption>> findRoutes(
       if (commonRoutes.isNotEmpty) break;
     }
   }
+
   if (commonRoutes.isNotEmpty) {
-    // Use the first common route
-    String routeId = commonRoutes.first;
-    // Reuse existing logic for that route
-    final routeData = routes[routeId]!;
-    final dynamic routePathRaw = routeData['route_path'];
-    final List<dynamic> routePathList = routePathRaw;
-    final List<Map<String, dynamic>> routePathCoords = routePathList
-        .whereType<Map<String, dynamic>>()
-        .toList();
+    // Add a RouteOption for each direct route
+    for (String routeId in commonRoutes) {
+      final routeData = routes[routeId]!;
+      final dynamic routePathRaw = routeData['route_path'];
+      final List<dynamic> routePathList = routePathRaw;
+      final List<Map<String, dynamic>> routePathCoords = routePathList
+          .whereType<Map<String, dynamic>>()
+          .toList();
 
-    // Find closest points
-    double minOriginDist = double.infinity;
-    double minDestDist = double.infinity;
-    int originClosestIndex = -1;
-    int destClosestIndex = -1;
-    for (int i = 0; i < routePathCoords.length; i++) {
-      final pt = routePathCoords[i];
-      final lat = (pt['latitude'] as num).toDouble();
-      final lng = (pt['longitude'] as num).toDouble();
-      final originDist = haversine(originLat, originLng, lat, lng);
-      if (originDist < minOriginDist) {
-        minOriginDist = originDist;
-        originClosestIndex = i;
+      // Find closest points
+      double minOriginDist = double.infinity;
+      double minDestDist = double.infinity;
+      int originClosestIndex = -1;
+      int destClosestIndex = -1;
+      for (int i = 0; i < routePathCoords.length; i++) {
+        final pt = routePathCoords[i];
+        final lat = (pt['latitude'] as num).toDouble();
+        final lng = (pt['longitude'] as num).toDouble();
+        final originDist = haversine(originLat, originLng, lat, lng);
+        if (originDist < minOriginDist) {
+          minOriginDist = originDist;
+          originClosestIndex = i;
+        }
+        final destDist = haversine(destLat, destLng, lat, lng);
+        if (destDist < minDestDist) {
+          minDestDist = destDist;
+          destClosestIndex = i;
+        }
       }
-      final destDist = haversine(destLat, destLng, lat, lng);
-      if (destDist < minDestDist) {
-        minDestDist = destDist;
-        destClosestIndex = i;
-      }
-    }
 
-    // Compute as before
-    final walkingDistanceOrigin = minOriginDist <= 50 ? 0 : minOriginDist;
-    final walkingDistanceDest = minDestDist <= 50 ? 0 : minDestDist;
-    final walkingDistance = walkingDistanceOrigin + walkingDistanceDest;
-    int startIndex = min(originClosestIndex, destClosestIndex);
-    int endIndex = max(originClosestIndex, destClosestIndex);
-    double jeepDistance = 0.0;
-    for (int i = startIndex; i < endIndex; i++) {
-      final pt1 = routePathCoords[i];
-      final pt2 = routePathCoords[i + 1];
-      jeepDistance += haversine(
-        (pt1['latitude'] as num).toDouble(),
-        (pt1['longitude'] as num).toDouble(),
-        (pt2['latitude'] as num).toDouble(),
-        (pt2['longitude'] as num).toDouble(),
+      // Always use originClosestIndex as start, destClosestIndex as end, and reverse if needed
+      int startIndex = originClosestIndex;
+      int endIndex = destClosestIndex;
+      bool reverse = startIndex > endIndex;
+      // Determine if walking is actually needed
+      const double onRouteThreshold = 100.0; // meters
+      final walkingDistanceOrigin = minOriginDist <= onRouteThreshold
+          ? 0.0
+          : minOriginDist;
+      final walkingDistanceDest = minDestDist <= onRouteThreshold
+          ? 0.0
+          : minDestDist;
+      final walkingDistance = walkingDistanceOrigin + walkingDistanceDest;
+      double jeepDistance = 0.0;
+      for (
+        int i = min(startIndex, endIndex);
+        i < max(startIndex, endIndex);
+        i++
+      ) {
+        final pt1 = routePathCoords[i];
+        final pt2 = routePathCoords[i + 1];
+        jeepDistance += haversine(
+          (pt1['latitude'] as num).toDouble(),
+          (pt1['longitude'] as num).toDouble(),
+          (pt2['latitude'] as num).toDouble(),
+          (pt2['longitude'] as num).toDouble(),
+        );
+      }
+      final walkingTime = (walkingDistance / 100).ceil();
+      final jeepTime = (jeepDistance / 300).ceil();
+      final distanceKm = jeepDistance / 1000.0;
+      final km = max(1, distanceKm.ceil());
+      final fareType = 'PUJ_MOD';
+      final fareKey = '${fareType}_$km';
+      final fareMap =
+          routeFares[fareKey] ?? {'regular': 0.0, 'discounted': 0.0};
+      final currentTime = DateTime.now();
+      List<RoutePoint> routePath = routePathCoords
+          .sublist(min(startIndex, endIndex), max(startIndex, endIndex) + 1)
+          .map(
+            (pt) => RoutePoint(
+              latitude: (pt['latitude'] as num).toDouble(),
+              longitude: (pt['longitude'] as num).toDouble(),
+            ),
+          )
+          .toList();
+      if (reverse) {
+        routePath = routePath.reversed.toList();
+      }
+      // Geocoding
+      final int n = routePath.length;
+      Set<int> neededIndices = {};
+      if (walkingDistanceOrigin > 0 && walkingDistanceDest > 0) {
+        neededIndices.addAll([0, 1, n - 2, n - 1]);
+      } else if (walkingDistanceOrigin > 0) {
+        neededIndices.addAll([0, 1, n - 1]);
+      } else if (walkingDistanceDest > 0) {
+        neededIndices.addAll([0, n - 2, n - 1]);
+      } else {
+        neededIndices.addAll([0, n - 1]);
+      }
+      final labelFutures = <int, Future<String?>>{};
+      for (int idx in neededIndices) {
+        if (idx >= 0 && idx < routePath.length) {
+          labelFutures[idx] = _getCleanedPlaceName(
+            routePath[idx].latitude,
+            routePath[idx].longitude,
+          );
+        }
+      }
+      final labelResults = <int, String?>{};
+      await Future.wait(
+        labelFutures.entries.map((entry) async {
+          labelResults[entry.key] = await entry.value;
+        }),
       );
-    }
-    final walkingTime = (walkingDistance / 100).ceil();
-    final jeepTime = (jeepDistance / 300).ceil();
-    final distanceKm = jeepDistance / 1000.0;
-    final km = max(1, distanceKm.ceil());
-    final fareType = 'PUJ_MOD';
-    final fareKey = '${fareType}_$km';
-    final fareMap = routeFares[fareKey] ?? {'regular': 0.0, 'discounted': 0.0};
-    final currentTime = DateTime.now();
-    final routePath = routePathCoords
-        .sublist(startIndex, endIndex + 1)
-        .map(
-          (pt) => RoutePoint(
-            latitude: (pt['latitude'] as num).toDouble(),
-            longitude: (pt['longitude'] as num).toDouble(),
+      String getLabel(int idx) {
+        return labelResults[idx] ?? 'Location ${idx + 1}';
+      }
+
+      // Build segments
+      final segments = <TransportSegment>[];
+      if (walkingDistanceOrigin > 0 && walkingDistanceDest > 0) {
+        segments.add(
+          TransportSegment(
+            icon: Icons.directions_walk,
+            type: 'Walk',
+            startIndex: 0,
+            endIndex: 0,
+            durationMinutes: (walkingDistanceOrigin / 100).ceil(),
+            getOnLabel: getLabel(0),
+            getOffLabel: getLabel(0),
           ),
-        )
-        .toList();
-    final segments = <TransportSegment>[];
-    if (walkingDistanceOrigin > 0)
-      segments.add(TransportSegment(icon: Icons.directions_walk, type: 'Walk'));
-    segments.add(TransportSegment(icon: Icons.directions_bus, type: 'Jeepney'));
-    if (walkingDistanceDest > 0)
-      segments.add(TransportSegment(icon: Icons.directions_walk, type: 'Walk'));
-    final timeline = <TimelinePoint>[];
-    DateTime cumulativeTime = currentTime;
-    timeline.add(
-      TimelinePoint(
-        label: 'Start',
-        time:
-            '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
-      ),
-    );
-    if (walkingDistanceOrigin > 0) {
-      cumulativeTime = cumulativeTime.add(
-        Duration(minutes: (walkingDistanceOrigin / 100).ceil()),
-      );
+        );
+        if (n > 2) {
+          segments.add(
+            TransportSegment(
+              icon: Icons.directions_bus,
+              type: 'Jeepney',
+              startIndex: 1,
+              endIndex: n - 2,
+              durationMinutes: jeepTime,
+              getOnLabel: getLabel(1),
+              getOffLabel: getLabel(n - 2),
+            ),
+          );
+        }
+        segments.add(
+          TransportSegment(
+            icon: Icons.directions_walk,
+            type: 'Walk',
+            startIndex: n - 1,
+            endIndex: n - 1,
+            durationMinutes: (walkingDistanceDest / 100).ceil(),
+            getOnLabel: getLabel(n - 1),
+            getOffLabel: getLabel(n - 1),
+          ),
+        );
+      } else if (walkingDistanceOrigin > 0) {
+        segments.add(
+          TransportSegment(
+            icon: Icons.directions_walk,
+            type: 'Walk',
+            startIndex: 0,
+            endIndex: 0,
+            durationMinutes: (walkingDistanceOrigin / 100).ceil(),
+            getOnLabel: getLabel(0),
+            getOffLabel: getLabel(0),
+          ),
+        );
+        if (n > 1) {
+          segments.add(
+            TransportSegment(
+              icon: Icons.directions_bus,
+              type: 'Jeepney',
+              startIndex: 1,
+              endIndex: n - 1,
+              durationMinutes: jeepTime,
+              getOnLabel: getLabel(1),
+              getOffLabel: getLabel(n - 1),
+            ),
+          );
+        }
+      } else if (walkingDistanceDest > 0) {
+        if (n > 1) {
+          segments.add(
+            TransportSegment(
+              icon: Icons.directions_bus,
+              type: 'Jeepney',
+              startIndex: 0,
+              endIndex: n - 2,
+              durationMinutes: jeepTime,
+              getOnLabel: getLabel(0),
+              getOffLabel: getLabel(n - 2),
+            ),
+          );
+        }
+        segments.add(
+          TransportSegment(
+            icon: Icons.directions_walk,
+            type: 'Walk',
+            startIndex: n - 1,
+            endIndex: n - 1,
+            durationMinutes: (walkingDistanceDest / 100).ceil(),
+            getOnLabel: getLabel(n - 1),
+            getOffLabel: getLabel(n - 1),
+          ),
+        );
+      } else {
+        if (n > 1) {
+          segments.add(
+            TransportSegment(
+              icon: Icons.directions_bus,
+              type: 'Jeepney',
+              startIndex: 0,
+              endIndex: n - 1,
+              durationMinutes: jeepTime,
+              getOnLabel: getLabel(0),
+              getOffLabel: getLabel(n - 1),
+            ),
+          );
+        }
+      }
+      // Build timeline (unchanged)
+      final timeline = <TimelinePoint>[];
+      DateTime cumulativeTime = currentTime;
       timeline.add(
         TimelinePoint(
-          label: 'Walk to Route',
+          label: 'Start',
           time:
               '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
         ),
       );
-    }
-    cumulativeTime = cumulativeTime.add(Duration(minutes: jeepTime));
-    timeline.add(
-      TimelinePoint(
-        label: 'Jeepney',
-        time:
-            '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
-      ),
-    );
-    if (walkingDistanceDest > 0) {
-      cumulativeTime = cumulativeTime.add(
-        Duration(minutes: (walkingDistanceDest / 100).ceil()),
-      );
+      if (walkingDistanceOrigin > 0) {
+        cumulativeTime = cumulativeTime.add(
+          Duration(minutes: (walkingDistanceOrigin / 100).ceil()),
+        );
+        timeline.add(
+          TimelinePoint(
+            label: 'Walk to Route',
+            time:
+                '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
+          ),
+        );
+      }
+      cumulativeTime = cumulativeTime.add(Duration(minutes: jeepTime));
       timeline.add(
         TimelinePoint(
-          label: 'Walk to Destination',
+          label: 'Jeepney',
           time:
               '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
         ),
       );
+      if (walkingDistanceDest > 0) {
+        cumulativeTime = cumulativeTime.add(
+          Duration(minutes: (walkingDistanceDest / 100).ceil()),
+        );
+        timeline.add(
+          TimelinePoint(
+            label: 'Walk to Destination',
+            time:
+                '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
+          ),
+        );
+      }
+      timeline.add(
+        TimelinePoint(
+          label: 'Destination',
+          time:
+              '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')} (ETA)',
+        ),
+      );
+      options.add(
+        RouteOption(
+          routeId: routeId,
+          routePath: routePath,
+          duration: '${walkingTime + jeepTime} mins',
+          regularFare: (fareMap['regular'] as num).toDouble(),
+          discountedFare: (fareMap['discounted'] as num).toDouble(),
+          segments: segments,
+          timeline: timeline,
+        ),
+      );
     }
-    timeline.add(
-      TimelinePoint(
-        label: 'Destination',
-        time:
-            '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')} (ETA)',
-      ),
-    );
-    options.add(
-      RouteOption(
-        routeId: routeId,
-        routePath: routePath,
-        duration: '${walkingTime + jeepTime} mins',
-        regularFare: fareMap['regular']!,
-        discountedFare: fareMap['discounted']!,
-        segments: segments,
-        timeline: timeline,
-      ),
-    );
   } else {
     // Placeholder for transfer: for now, no routes
     print('DEBUG: No direct routes; transfers not implemented yet');
@@ -274,4 +406,35 @@ Future<List<RouteOption>> findRoutes(
     return aTime.compareTo(bTime);
   });
   return options;
+}
+
+// Helper function to get cleaned place name from coordinates
+Future<String?> _getCleanedPlaceName(double lat, double lon) async {
+  try {
+    final result = await NominatimService.reverseGeocode(lat, lon);
+    if (result != null) {
+      String name = result.displayName;
+      // Remove common suffixes
+      name = name.replaceAll(
+        RegExp(r',?\s*Iloilo( City)?', caseSensitive: false),
+        '',
+      );
+      name = name.replaceAll(
+        RegExp(r',?\s*Philippines', caseSensitive: false),
+        '',
+      );
+      name = name.replaceAll(
+        RegExp(r',?\s*Western Visayas', caseSensitive: false),
+        '',
+      );
+      // Remove trailing commas/spaces
+      name = name.replaceAll(RegExp(r',\s*$'), '').trim();
+      // Only keep the first phrase before a comma
+      name = name.split(',')[0].trim();
+      return name.isNotEmpty ? name : null;
+    }
+  } catch (e) {
+    print('Error fetching place name: $e');
+  }
+  return null;
 }

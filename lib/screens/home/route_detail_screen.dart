@@ -142,38 +142,58 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
     final theme = Theme.of(context);
     final primaryBlue = theme.colorScheme.primary;
 
+    // Prepare route points
     final List<LatLng> routePoints = widget.routeOption.routePath
         .map((p) => LatLng(p.latitude, p.longitude))
         .toList();
-    final List<Polyline> polylines = routePoints.isNotEmpty
-        ? [
+
+    // Segment-based polylines and markers
+    final List<Polyline> polylines = [];
+    final List<Marker> markers = [];
+    if (routePoints.isNotEmpty && widget.routeOption.segments.isNotEmpty) {
+      for (final segment in widget.routeOption.segments) {
+        // Defensive: clamp indices
+        int startIdx = segment.startIndex.clamp(0, routePoints.length - 1);
+        int endIdx = segment.endIndex.clamp(0, routePoints.length - 1);
+        if (startIdx > endIdx) {
+          final tmp = startIdx;
+          startIdx = endIdx;
+          endIdx = tmp;
+        }
+        // Only add walking marker/polyline if segment covers more than one point
+        final isWalk = segment.type.toLowerCase().contains('walk');
+        if (!isWalk || startIdx != endIdx) {
+          // Polyline for this segment
+          final segPoints = routePoints.sublist(startIdx, endIdx + 1);
+          polylines.add(
             Polyline(
-              points: routePoints,
+              points: segPoints,
               color: theme.colorScheme.primary,
               strokeWidth: 4.0,
+              isDotted: isWalk,
             ),
-          ]
-        : [];
-    final List<Marker> markers = [];
-    if (routePoints.isNotEmpty) {
+          );
+          // Marker at start of segment
+          String iconPath = isWalk
+              ? 'assets/icons/map_walking.png'
+              : 'assets/icons/map_jeepney.png';
+          markers.add(
+            Marker(
+              point: routePoints[startIdx],
+              width: 32,
+              height: 32,
+              child: Image.asset(iconPath, width: 32, height: 32),
+            ),
+          );
+        }
+      }
+      // Always add a marker at the end
       markers.add(
         Marker(
           point: routePoints.last,
-          width: 40,
-          height: 40,
-          child: Icon(Icons.location_on, color: Colors.red, size: 40),
-        ),
-      );
-      markers.add(
-        Marker(
-          point: routePoints.last,
-          width: 40,
-          height: 40,
-          child: Icon(
-            Icons.location_on,
-            color: theme.colorScheme.error,
-            size: 40,
-          ),
+          width: 32,
+          height: 32,
+          child: const Icon(Icons.location_on, color: Colors.red, size: 32),
         ),
       );
     }
@@ -322,7 +342,6 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                               final isWalk = segment.type
                                   .toLowerCase()
                                   .contains('walk');
-
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
@@ -332,7 +351,7 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    /// Segment Header
+                                    // Segment Header
                                     Container(
                                       width: double.infinity,
                                       padding: const EdgeInsets.symmetric(
@@ -389,7 +408,7 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                               if (!isWalk)
                                                 const SizedBox(width: 12),
                                               Text(
-                                                widget.routeOption.duration,
+                                                '${segment.durationMinutes} min',
                                                 style: theme.textTheme.bodyLarge
                                                     ?.copyWith(
                                                       color: theme
@@ -402,46 +421,55 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                         ],
                                       ),
                                     ),
-
-                                    /// Segment Body
+                                    // Segment Body
                                     Padding(
                                       padding: const EdgeInsets.all(12),
                                       child: isWalk
                                           ? Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
                                               children: [
                                                 Expanded(
                                                   child: Text(
-                                                    widget
-                                                            .routeOption
-                                                            .timeline
-                                                            .isNotEmpty
-                                                        ? widget
-                                                              .routeOption
-                                                              .timeline
-                                                              .first
-                                                              .label
-                                                        : 'Start',
+                                                    segment.getOnLabel ??
+                                                        'Start',
                                                     style: theme
                                                         .textTheme
                                                         .bodyMedium,
                                                   ),
                                                 ),
-                                                const SizedBox(width: 12),
+                                                const SizedBox(width: 8),
+                                                // Horizontal line with circles for walk
+                                                Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 12,
+                                                      height: 12,
+                                                      decoration: BoxDecoration(
+                                                        color: primaryBlue,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      width: 32,
+                                                      height: 2,
+                                                      color: primaryBlue,
+                                                    ),
+                                                    Container(
+                                                      width: 12,
+                                                      height: 12,
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(
+                                                          color: primaryBlue,
+                                                        ),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(width: 8),
                                                 Expanded(
                                                   child: Text(
-                                                    widget
-                                                                .routeOption
-                                                                .timeline
-                                                                .length >
-                                                            1
-                                                        ? widget
-                                                              .routeOption
-                                                              .timeline[1]
-                                                              .label
-                                                        : 'Route',
+                                                    segment.getOffLabel ??
+                                                        'Route',
                                                     textAlign: TextAlign.right,
                                                     style: theme
                                                         .textTheme
@@ -468,13 +496,7 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                                                 _routeDescription!
                                                                     .isNotEmpty
                                                             ? _routeDescription!
-                                                            : (widget
-                                                                          .routeOption
-                                                                          .timeline
-                                                                          .length >=
-                                                                      2
-                                                                  ? '${widget.routeOption.timeline.first.label} → ${widget.routeOption.timeline.last.label}'
-                                                                  : 'Route'),
+                                                            : 'Route',
                                                         style: theme
                                                             .textTheme
                                                             .bodyMedium,
@@ -484,64 +506,66 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                                 ),
                                                 const SizedBox(height: 12),
                                                 Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
-                                                    Container(
-                                                      width: 12,
-                                                      height: 12,
-                                                      decoration: BoxDecoration(
-                                                        color: primaryBlue,
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 12),
-                                                    Expanded(
-                                                      child: Text(
-                                                        widget
-                                                                    .routeOption
-                                                                    .timeline
-                                                                    .length >
-                                                                1
-                                                            ? widget
-                                                                  .routeOption
-                                                                  .timeline[1]
-                                                                  .label
-                                                            : 'Get On',
-                                                        style: theme
-                                                            .textTheme
-                                                            .bodyLarge,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 12),
-                                                Row(
-                                                  children: [
-                                                    Container(
-                                                      width: 12,
-                                                      height: 12,
-                                                      decoration: BoxDecoration(
-                                                        border: Border.all(
+                                                    Column(
+                                                      children: [
+                                                        Container(
+                                                          width: 12,
+                                                          height: 12,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                color:
+                                                                    primaryBlue,
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                              ),
+                                                        ),
+                                                        Container(
+                                                          width: 2,
+                                                          height: 32,
                                                           color: primaryBlue,
                                                         ),
-                                                        shape: BoxShape.circle,
-                                                      ),
+                                                        Container(
+                                                          width: 12,
+                                                          height: 12,
+                                                          decoration: BoxDecoration(
+                                                            border: Border.all(
+                                                              color:
+                                                                  primaryBlue,
+                                                            ),
+                                                            shape:
+                                                                BoxShape.circle,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                     const SizedBox(width: 12),
                                                     Expanded(
-                                                      child: Text(
-                                                        widget
-                                                                .routeOption
-                                                                .timeline
-                                                                .isNotEmpty
-                                                            ? widget
-                                                                  .routeOption
-                                                                  .timeline
-                                                                  .last
-                                                                  .label
-                                                            : 'Get Off',
-                                                        style: theme
-                                                            .textTheme
-                                                            .bodyLarge,
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            segment.getOnLabel ??
+                                                                'Get On',
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodyLarge,
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 32,
+                                                          ),
+                                                          Text(
+                                                            segment.getOffLabel ??
+                                                                'Get Off',
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodyLarge,
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
                                                   ],
@@ -608,6 +632,23 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                 onPressed: _toggleFavorite,
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 16),
+                          // Find new route button (centered, styled as a TextButton)
+                          Center(
+                            child: TextButton(
+                              onPressed: () =>
+                                  Navigator.of(context).pop('find_new_route'),
+                              child: Text(
+                                'Find new route',
+                                style: TextStyle(
+                                  color: primaryBlue,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 24),
                         ],

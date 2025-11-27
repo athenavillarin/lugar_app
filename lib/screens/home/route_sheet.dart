@@ -30,7 +30,9 @@ class RouteSheet extends StatelessWidget {
     required this.selectedFareType,
     required this.onFareTypeChanged,
     required this.sheetController,
+    required this.onFindNewRoute,
   });
+  final VoidCallback onFindNewRoute;
 
   final TextEditingController fromController;
   final TextEditingController toController;
@@ -201,15 +203,19 @@ class RouteSheet extends StatelessWidget {
                                       isSelected:
                                           false, // You can implement selection logic
                                       primaryBlue: primaryBlue,
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                RouteDetailScreenClean(
-                                                  routeOption: route,
-                                                ),
-                                          ),
-                                        );
+                                      onTap: () async {
+                                        final result =
+                                            await Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    RouteDetailScreenClean(
+                                                      routeOption: route,
+                                                    ),
+                                              ),
+                                            );
+                                        if (result == 'find_new_route') {
+                                          onFindNewRoute();
+                                        }
                                       },
                                     );
                                   }).toList()
