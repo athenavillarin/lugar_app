@@ -369,19 +369,41 @@ Future<List<RouteOption>> findRoutes(
         );
         timeline.add(
           TimelinePoint(
-            label: 'Walk to Destination',
+            label: getLabel(n - 1),
             time:
                 '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}',
           ),
         );
+      } else {
+        timeline.add(
+          TimelinePoint(
+            label: getLabel(n - 1),
+            time:
+                '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')} (ETA)',
+          ),
+        );
       }
-      timeline.add(
-        TimelinePoint(
-          label: 'Destination',
-          time:
-              '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')} (ETA)',
-        ),
+      // Ensure all string values are non-null
+      final startLoc = segments.isNotEmpty && segments.first.getOnLabel != null
+          ? segments.first.getOnLabel!
+          : 'Start';
+
+      final checkpointLoc =
+          segments.length > 1 && segments[1].getOnLabel != null
+          ? segments[1].getOnLabel!
+          : (segments.isNotEmpty && segments.first.getOffLabel != null
+                ? segments.first.getOffLabel!
+                : 'Checkpoint');
+
+      final startTimeStr =
+          '${DateTime.now().add(Duration(minutes: walkingTime)).hour.toString().padLeft(2, '0')}:${DateTime.now().add(Duration(minutes: walkingTime)).minute.toString().padLeft(2, '0')}';
+      final endTimeStr =
+          '${cumulativeTime.hour.toString().padLeft(2, '0')}:${cumulativeTime.minute.toString().padLeft(2, '0')}';
+
+      print(
+        'DEBUG: Creating RouteOption with startLocation="$startLoc", checkpointLocation="$checkpointLoc", startTime="$startTimeStr", endTime="$endTimeStr"',
       );
+
       options.add(
         RouteOption(
           routeId: routeId,
@@ -389,6 +411,12 @@ Future<List<RouteOption>> findRoutes(
           duration: '${walkingTime + jeepTime} mins',
           regularFare: (fareMap['regular'] as num).toDouble(),
           discountedFare: (fareMap['discounted'] as num).toDouble(),
+          price: (fareMap['regular'] as num).toDouble(),
+          startTime: startTimeStr,
+          endTime: endTimeStr,
+          progress: 0.0,
+          startLocation: startLoc,
+          checkpointLocation: checkpointLoc,
           segments: segments,
           timeline: timeline,
         ),

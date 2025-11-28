@@ -10,6 +10,12 @@ class RouteOption {
   final double discountedFare;
   final List<TransportSegment> segments;
   final List<TimelinePoint> timeline;
+  final double price;
+  final String? startTime;
+  final String? endTime;
+  final double progress;
+  final String? startLocation;
+  final String? checkpointLocation;
 
   const RouteOption({
     required this.routeId,
@@ -19,6 +25,12 @@ class RouteOption {
     required this.discountedFare,
     required this.segments,
     required this.timeline,
+    required this.price,
+    this.startTime,
+    this.endTime,
+    required this.progress,
+    this.startLocation,
+    this.checkpointLocation,
   });
 }
 
