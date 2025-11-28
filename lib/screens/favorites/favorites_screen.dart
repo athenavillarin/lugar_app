@@ -242,10 +242,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.star_border,
-              size: 64,
-              color: theme.textTheme.bodyLarge?.color?.withOpacity(0.3),
+            ColorFiltered(
+              colorFilter: ColorFilter.mode(
+                theme.textTheme.bodyLarge?.color?.withOpacity(0.3) ??
+                    Colors.grey,
+                BlendMode.srcIn,
+              ),
+              child: Image.asset(
+                'assets/icons/star.png',
+                width: 64,
+                height: 64,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
