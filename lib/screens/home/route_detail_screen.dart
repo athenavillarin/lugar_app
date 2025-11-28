@@ -422,8 +422,9 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(12),
+                                  color:
+                                      theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,8 +439,8 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                       decoration: const BoxDecoration(
                                         color: Colors.black87,
                                         borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(12),
-                                          topRight: Radius.circular(12),
+                                          topLeft: Radius.circular(16),
+                                          topRight: Radius.circular(16),
                                         ),
                                       ),
                                       child: Row(
