@@ -35,22 +35,32 @@ class NotificationProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      // Fetch global announcements for all users
+      final globalSnapshot = await _firestore
+          .collection('announcements')
+          .orderBy('createdAt', descending: true)
+          .get();
+      final globalNotifications = globalSnapshot.docs
+          .map((doc) => AppNotification.fromFirestore(doc))
+          .toList();
+
+      List<AppNotification> userNotifications = [];
       if (user != null) {
-        // Fetch from Firebase
+        // Fetch user-specific notifications
         final snapshot = await _firestore
             .collection('users')
             .doc(user.uid)
             .collection('notifications')
             .orderBy('createdAt', descending: true)
             .get();
-
-        _notifications = snapshot.docs
+        userNotifications = snapshot.docs
             .map((doc) => AppNotification.fromFirestore(doc))
             .toList();
-      } else {
-        // Local notifications only - keep existing list
-        // No fetch needed for guests
       }
+
+      // Merge global and user notifications
+      _notifications = [...globalNotifications, ...userNotifications]
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } catch (e) {
       debugPrint('Error fetching notifications: $e');
     } finally {
