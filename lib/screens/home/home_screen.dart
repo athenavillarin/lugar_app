@@ -24,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _fromController.clear();
       _toController.clear();
       _showRouteResults = false;
+      _isFindingRoute = false;
     });
   }
 
@@ -163,6 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Polyline> _routePolylines = [];
   final List<Marker> _segmentMarkers = [];
   bool _showRouteResults = false;
+  bool _isFindingRoute = false;
   FareType _selectedFareType = FareType.regular;
   final List<RouteOption> _routeOptions = [];
 
@@ -377,6 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Show loading animation immediately
     setState(() {
+      _isFindingRoute = true;
       _showRouteResults = true;
       _routeOptions.clear();
     });
@@ -425,8 +428,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (fromCoord == null || toCoord == null) {
       print('DEBUG: One or both coordinates are null.');
       setState(() {
+        _isFindingRoute = false;
         _routeOptions.clear();
-        _showRouteResults = true;
+        _showRouteResults = false;
       });
       return;
     }
@@ -445,6 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       print('Matched route count: ${options.length}');
+      _isFindingRoute = false;
       _routeOptions
         ..clear()
         ..addAll(options);
@@ -527,6 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               sheetController: _sheetController,
               onFindNewRoute: _clearFromToFields,
+              isLoading: _isFindingRoute,
             ),
           ],
         ),

@@ -33,6 +33,7 @@ class RouteSheet extends StatelessWidget {
     required this.onFareTypeChanged,
     required this.sheetController,
     required this.onFindNewRoute,
+    required this.isLoading,
   });
   final VoidCallback onFindNewRoute;
 
@@ -58,6 +59,7 @@ class RouteSheet extends StatelessWidget {
   final Function(FareType) onFareTypeChanged;
 
   final DraggableScrollableController sheetController;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +130,15 @@ class RouteSheet extends StatelessWidget {
                           onSwap: onSwap,
                         ),
                         const SizedBox(height: 20),
-                        if (!showResults)
+                        if (isLoading)
+                          Center(
+                            child: Lottie.asset(
+                              'assets/lottie/loading.json',
+                              width: 120,
+                              repeat: true,
+                            ),
+                          )
+                        else if (!showResults)
                           _FindRouteButton(
                             primaryBlue: primaryBlue,
                             isEnabled: isFormValid,

@@ -290,124 +290,180 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
-                                      children: widget.routeOption.timeline.map((
-                                        point,
-                                      ) {
-                                        final isFirst =
-                                            point ==
-                                            widget.routeOption.timeline.first;
-                                        final isLast =
-                                            point ==
-                                            widget.routeOption.timeline.last;
-                                        return Column(
-                                          children: [
-                                            // Dot
-                                            Container(
-                                              width: 16,
-                                              height: 16,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: primaryBlue,
-                                                  width: 2,
+                                      children: List.generate(
+                                        widget.routeOption.timeline.length,
+                                        (i) {
+                                          final point =
+                                              widget.routeOption.timeline[i];
+                                          final isFirst = i == 0;
+                                          final isLast =
+                                              i ==
+                                              widget
+                                                      .routeOption
+                                                      .timeline
+                                                      .length -
+                                                  1;
+                                          // Determine icon based on segment leading to this point
+                                          Widget iconWidget;
+                                          if (isFirst) {
+                                            // Use the first segment type if available
+                                            if (widget
+                                                .routeOption
+                                                .segments
+                                                .isNotEmpty) {
+                                              final firstSeg = widget
+                                                  .routeOption
+                                                  .segments
+                                                  .first;
+                                              final isWalk = firstSeg.type
+                                                  .toLowerCase()
+                                                  .contains('walk');
+                                              if (isWalk) {
+                                                iconWidget = const Icon(
+                                                  Icons.directions_walk,
+                                                  size: 16,
+                                                  color: Colors.black87,
+                                                );
+                                              } else {
+                                                iconWidget = const Icon(
+                                                  Icons.directions_bus,
+                                                  size: 16,
+                                                  color: Colors.black87,
+                                                );
+                                              }
+                                            } else {
+                                              iconWidget =
+                                                  const SizedBox.shrink();
+                                            }
+                                          } else {
+                                            // Get the segment leading to this point (i-1)
+                                            final seg =
+                                                (i - 1) <
+                                                    widget
+                                                        .routeOption
+                                                        .segments
+                                                        .length
+                                                ? widget
+                                                      .routeOption
+                                                      .segments[i - 1]
+                                                : null;
+                                            if (seg != null) {
+                                              final isWalk = seg.type
+                                                  .toLowerCase()
+                                                  .contains('walk');
+                                              if (isWalk) {
+                                                iconWidget = const Icon(
+                                                  Icons.directions_walk,
+                                                  size: 16,
+                                                  color: Colors.black87,
+                                                );
+                                              } else {
+                                                iconWidget = const Icon(
+                                                  Icons.directions_bus,
+                                                  size: 16,
+                                                  color: Colors.black87,
+                                                );
+                                              }
+                                            } else {
+                                              iconWidget =
+                                                  const SizedBox.shrink();
+                                            }
+                                          }
+                                          // Label logic
+                                          String labelText;
+                                          if (isFirst) {
+                                            labelText = 'Start';
+                                          } else if (isLast) {
+                                            final words = point.label
+                                                .trim()
+                                                .split(RegExp(r'[\s,]+'));
+                                            labelText = words.firstWhere(
+                                              (word) => word.length > 2,
+                                              orElse: () => words.isNotEmpty
+                                                  ? words.first
+                                                  : point.label,
+                                            );
+                                          } else {
+                                            // Use segment type for label
+                                            final seg =
+                                                (i - 1) <
+                                                    widget
+                                                        .routeOption
+                                                        .segments
+                                                        .length
+                                                ? widget
+                                                      .routeOption
+                                                      .segments[i - 1]
+                                                : null;
+                                            if (seg != null &&
+                                                seg.type.toLowerCase().contains(
+                                                  'walk',
+                                                )) {
+                                              labelText = 'Walk';
+                                            } else {
+                                              labelText = 'Jeepney';
+                                            }
+                                          }
+                                          return Column(
+                                            children: [
+                                              // Dot
+                                              Container(
+                                                width: 16,
+                                                height: 16,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: primaryBlue,
+                                                    width: 2,
+                                                  ),
                                                 ),
-                                              ),
-                                              child: Center(
-                                                child: Container(
-                                                  width: 6,
-                                                  height: 6,
-                                                  decoration: BoxDecoration(
-                                                    color: point.isCheckpoint
-                                                        ? Colors.white
-                                                        : primaryBlue,
-                                                    shape: BoxShape.circle,
+                                                child: Center(
+                                                  child: Container(
+                                                    width: 6,
+                                                    height: 6,
+                                                    decoration: BoxDecoration(
+                                                      color: point.isCheckpoint
+                                                          ? Colors.white
+                                                          : primaryBlue,
+                                                      shape: BoxShape.circle,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            // Icon below dot (fixed height for alignment)
-                                            SizedBox(
-                                              height: 20,
-                                              child: () {
-                                                if (isFirst) {
-                                                  return const Icon(
-                                                    Icons.directions_walk,
-                                                    size: 16,
-                                                    color: Colors.black87,
-                                                  );
-                                                } else if (isLast) {
-                                                  // Show walking icon if the last point has walking segment
-                                                  final hasWalkingSegmentToEnd =
-                                                      widget
-                                                          .routeOption
-                                                          .segments
-                                                          .isNotEmpty &&
-                                                      widget
-                                                              .routeOption
-                                                              .segments
-                                                              .last
-                                                              .type ==
-                                                          'Walk';
-                                                  return hasWalkingSegmentToEnd
-                                                      ? const Icon(
-                                                          Icons.directions_walk,
-                                                          size: 16,
-                                                          color: Colors.black87,
-                                                        )
-                                                      : const SizedBox.shrink();
-                                                } else {
-                                                  return const Icon(
-                                                    Icons.directions_bus,
-                                                    size: 16,
-                                                    color: Colors.black87,
-                                                  );
-                                                }
-                                              }(),
-                                            ),
-                                            // Label - simplified to show Start/Jeepney/First word
-                                            Text(
-                                              () {
-                                                if (isFirst) return 'Start';
-                                                if (isLast) {
-                                                  // Show first word of destination
-                                                  final words = point.label
-                                                      .trim()
-                                                      .split(RegExp(r'[\s,]+'));
-                                                  for (final word in words) {
-                                                    if (word.length > 2)
-                                                      return word;
-                                                  }
-                                                  return words.isNotEmpty
-                                                      ? words.first
-                                                      : point.label;
-                                                }
-                                                return 'Jeepney';
-                                              }(),
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.grey[600],
-                                                fontWeight: FontWeight.w500,
-                                                fontFamily: 'Montserrat',
+                                              const SizedBox(height: 8),
+                                              // Icon below dot (fixed height for alignment)
+                                              SizedBox(
+                                                height: 20,
+                                                child: iconWidget,
                                               ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            // Time
-                                            Text(
-                                              point.time,
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.grey[400],
-                                                fontWeight: FontWeight.w400,
-                                                fontFamily: 'Montserrat',
+                                              // Label
+                                              Text(
+                                                labelText,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.grey[600],
+                                                  fontWeight: FontWeight.w500,
+                                                  fontFamily: 'Montserrat',
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                textAlign: TextAlign.center,
                                               ),
-                                            ),
-                                          ],
-                                        );
-                                      }).toList(),
+                                              // Time
+                                              Text(
+                                                point.time,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.grey[400],
+                                                  fontWeight: FontWeight.w400,
+                                                  fontFamily: 'Montserrat',
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -419,121 +475,58 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
 
                           /// Segments
                           Column(
-                            children: widget.routeOption.segments.map((
-                              segment,
-                            ) {
-                              final isWalk = segment.type
-                                  .toLowerCase()
-                                  .contains('walk');
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                decoration: BoxDecoration(
-                                  color:
-                                      theme.colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Segment Header
-                                    SegmentHeader(
-                                      icon: segment.icon,
-                                      type: segment.type,
-                                      fare: !isWalk
-                                          ? 'P ${widget.routeOption.regularFare.toStringAsFixed(0)}'
-                                          : null,
-                                      duration:
-                                          '${segment.durationMinutes} min',
+                            children: widget.routeOption.segments
+                                .where((segment) {
+                                  final isWalk = segment.type
+                                      .toLowerCase()
+                                      .contains('walk');
+                                  return !isWalk ||
+                                      segment.startIndex != segment.endIndex;
+                                })
+                                .map((segment) {
+                                  final isWalk = segment.type
+                                      .toLowerCase()
+                                      .contains('walk');
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: theme
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
-                                    // Segment Body
-                                    Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: isWalk
-                                          ? Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    segment.getOnLabel ??
-                                                        'Start',
-                                                    style: theme
-                                                        .textTheme
-                                                        .bodyMedium,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                // Horizontal line with circles for walk
-                                                Row(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Segment Header
+                                        SegmentHeader(
+                                          icon: segment.icon,
+                                          type: segment.type,
+                                          fare: !isWalk
+                                              ? 'P ${widget.routeOption.regularFare.toStringAsFixed(0)}'
+                                              : null,
+                                          duration:
+                                              '${segment.durationMinutes} min',
+                                        ),
+                                        // Segment Body
+                                        Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: isWalk
+                                              ? Row(
                                                   children: [
-                                                    Container(
-                                                      width: 12,
-                                                      height: 12,
-                                                      decoration: BoxDecoration(
-                                                        color: primaryBlue,
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                    ),
-                                                    Container(
-                                                      width: 32,
-                                                      height: 2,
-                                                      color: primaryBlue,
-                                                    ),
-                                                    Container(
-                                                      width: 12,
-                                                      height: 12,
-                                                      decoration: BoxDecoration(
-                                                        border: Border.all(
-                                                          color: primaryBlue,
-                                                        ),
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    segment.getOffLabel ??
-                                                        'Route',
-                                                    textAlign: TextAlign.right,
-                                                    style: theme
-                                                        .textTheme
-                                                        .bodyMedium,
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          : Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    const Icon(
-                                                      Icons.alt_route,
-                                                      size: 18,
-                                                    ),
-                                                    const SizedBox(width: 8),
                                                     Expanded(
                                                       child: Text(
-                                                        _routeDescription !=
-                                                                    null &&
-                                                                _routeDescription!
-                                                                    .isNotEmpty
-                                                            ? _routeDescription!
-                                                            : 'Route',
+                                                        segment.getOnLabel ??
+                                                            'Start',
                                                         style: theme
                                                             .textTheme
                                                             .bodyMedium,
                                                       ),
                                                     ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 12),
-                                                Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Column(
+                                                    const SizedBox(width: 8),
+                                                    // Horizontal line with circles for walk
+                                                    Row(
                                                       children: [
                                                         Container(
                                                           width: 12,
@@ -547,8 +540,8 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                                               ),
                                                         ),
                                                         Container(
-                                                          width: 2,
-                                                          height: 32,
+                                                          width: 32,
+                                                          height: 2,
                                                           color: primaryBlue,
                                                         ),
                                                         Container(
@@ -565,42 +558,126 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                                         ),
                                                       ],
                                                     ),
-                                                    const SizedBox(width: 12),
+                                                    const SizedBox(width: 8),
                                                     Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            segment.getOnLabel ??
-                                                                'Get On',
-                                                            style: theme
-                                                                .textTheme
-                                                                .bodyLarge,
-                                                          ),
-                                                          const SizedBox(
-                                                            height: 32,
-                                                          ),
-                                                          Text(
-                                                            segment.getOffLabel ??
-                                                                'Get Off',
-                                                            style: theme
-                                                                .textTheme
-                                                                .bodyLarge,
-                                                          ),
-                                                        ],
+                                                      child: Text(
+                                                        segment.getOffLabel ??
+                                                            'Route',
+                                                        textAlign:
+                                                            TextAlign.right,
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyMedium,
                                                       ),
                                                     ),
                                                   ],
+                                                )
+                                              : Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.alt_route,
+                                                          size: 18,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Expanded(
+                                                          child: Text(
+                                                            _routeDescription !=
+                                                                        null &&
+                                                                    _routeDescription!
+                                                                        .isNotEmpty
+                                                                ? _routeDescription!
+                                                                : 'Route',
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodyMedium,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Row(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Column(
+                                                          children: [
+                                                            Container(
+                                                              width: 12,
+                                                              height: 12,
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                    color:
+                                                                        primaryBlue,
+                                                                    shape: BoxShape
+                                                                        .circle,
+                                                                  ),
+                                                            ),
+                                                            Container(
+                                                              width: 2,
+                                                              height: 32,
+                                                              color:
+                                                                  primaryBlue,
+                                                            ),
+                                                            Container(
+                                                              width: 12,
+                                                              height: 12,
+                                                              decoration: BoxDecoration(
+                                                                border: Border.all(
+                                                                  color:
+                                                                      primaryBlue,
+                                                                ),
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 12,
+                                                        ),
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              Text(
+                                                                segment.getOnLabel ??
+                                                                    'Get On',
+                                                                style: theme
+                                                                    .textTheme
+                                                                    .bodyLarge,
+                                                              ),
+                                                              const SizedBox(
+                                                                height: 32,
+                                                              ),
+                                                              Text(
+                                                                segment.getOffLabel ??
+                                                                    'Get Off',
+                                                                style: theme
+                                                                    .textTheme
+                                                                    .bodyLarge,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
+                                  );
+                                })
+                                .toList(),
                           ),
 
                           const SizedBox(height: 40),

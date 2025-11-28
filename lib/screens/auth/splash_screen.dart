@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,27 +9,12 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _checkAuth();
-  }
+  Future<void> _onLetsGoPressed() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasSeenOnboarding', true);
 
-  Future<void> _checkAuth() async {
-    await Future.delayed(
-      const Duration(milliseconds: 800),
-    ); // Show splash briefly
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      // User is logged in
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
-    } else {
-      // Not logged in
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/login');
-      }
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed('/login');
     }
   }
 
@@ -75,7 +60,6 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ),
 
-                    // Gap between logo and text
                     const SizedBox(height: 20),
 
                     Text(
@@ -84,11 +68,59 @@ class _SplashScreenState extends State<SplashScreen> {
                       style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
                     ),
 
+                    SizedBox(height: size.height > 600 ? 120 : 40),
+
+                    // CTA Button
                     SizedBox(
-                      height: size.height > 600 ? 120 : 40,
-                    ), // Responsive gap: 120 for taller screens, 40 for smaller
-                    // Loading indicator instead of button
-                    const CircularProgressIndicator(),
+                      width: 164,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: _onLetsGoPressed,
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            if (states.contains(WidgetState.pressed)) {
+                              return theme.scaffoldBackgroundColor;
+                            }
+                            return theme.colorScheme.primary;
+                          }),
+                          foregroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            if (states.contains(WidgetState.pressed)) {
+                              return theme.colorScheme.onSurface;
+                            }
+                            return theme.colorScheme.onPrimary;
+                          }),
+                          elevation: WidgetStateProperty.all(6),
+                          shadowColor: WidgetStateProperty.all(
+                            theme.colorScheme.primary.withValues(alpha: 0.3),
+                          ),
+                          shape: WidgetStateProperty.all(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Let's go!",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w500,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_forward_ios, size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
 
                     const SizedBox(height: 20),
                   ],

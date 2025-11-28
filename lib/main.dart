@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+
 import 'firebase_options.dart';
 import 'screens/auth/splash_screen.dart';
 import 'screens/auth/animated_splash_screen.dart';
@@ -12,7 +15,7 @@ import 'services/fcm_service.dart';
 import 'providers/notification_provider.dart';
 import 'providers/favorites_provider.dart';
 
-// Top-level function for handling background messages
+// Background message handler
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -23,14 +26,31 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Set up background message handler
+  // Handle FCM background messages
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  runApp(const MyApp());
+  // Load prefs and user before runApp() → prevents splash flash
+  final prefs = await SharedPreferences.getInstance();
+  final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+  final user = FirebaseAuth.instance.currentUser;
+
+  // Decide starting route
+  String initialRoute;
+
+  if (user != null) {
+    initialRoute = '/home';
+  } else if (hasSeenOnboarding) {
+    initialRoute = '/login';
+  } else {
+    initialRoute = '/onboarding'; // first installation → show onboarding splash
+  }
+
+  runApp(MyApp(initialRoute: initialRoute));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final String initialRoute;
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -48,7 +68,6 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _initializeFCM() async {
-    // Initialize FCM service with the same provider instance
     _fcmService = FCMService(_notificationProvider);
     await _fcmService!.initialize();
   }
@@ -74,7 +93,7 @@ class _MyAppState extends State<MyApp> {
             seedColor: primaryBlue,
             primary: primaryBlue,
             secondary: primaryBlue,
-            surfaceContainerHighest: cardBackgroundColor, // Card background
+            surfaceContainerHighest: cardBackgroundColor,
           ),
           cardTheme: const CardThemeData(color: cardBackgroundColor),
           textTheme: Typography.blackMountainView.apply(
@@ -90,7 +109,7 @@ class _MyAppState extends State<MyApp> {
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.pressed)) {
-                  return const Color(0xFFF5F8FF); // scaffoldBackgroundColor
+                  return const Color(0xFFF5F8FF);
                 }
                 return primaryBlue;
               }),
@@ -106,13 +125,16 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
         ),
-        initialRoute: '/',
+
+        initialRoute: widget.initialRoute,
+
         routes: {
-          '/': (context) => const AnimatedSplashScreen(),
           '/onboarding': (context) => const SplashScreen(),
           '/login': (context) => const LoginScreen(),
           '/signup': (context) => const SignupScreen(),
           '/home': (context) => const AppShell(),
+
+          // Keeping this in case you still use it somewhere
           '/loading_to_home': (context) =>
               const AnimatedSplashScreen(nextRoute: '/home'),
         },

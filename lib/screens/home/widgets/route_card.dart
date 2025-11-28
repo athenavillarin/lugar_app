@@ -76,21 +76,28 @@ class RouteCard extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             Row(
-              children: route.segments.map((segment) {
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    segment.icon,
-                    size: 16,
-                    color: const Color(0xFF1F2024),
-                  ),
-                );
-              }).toList(),
+              children: route.segments
+                  .where((segment) {
+                    final isWalk = segment.type.toLowerCase().contains('walk');
+                    // Only show walking if it covers more than one point
+                    return !isWalk || segment.startIndex != segment.endIndex;
+                  })
+                  .map((segment) {
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        segment.icon,
+                        size: 16,
+                        color: const Color(0xFF1F2024),
+                      ),
+                    );
+                  })
+                  .toList(),
             ),
           ],
         ),
@@ -124,6 +131,26 @@ class RouteCard extends StatelessWidget {
   Widget _buildTimeline() {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Filter timeline points to match filtered segments logic
+        final timeline = route.timeline;
+        final segments = route.segments;
+        List<int> validTimelineIndexes = [];
+        if (timeline.isNotEmpty) {
+          validTimelineIndexes.add(0); // Always show first point
+          for (int i = 1; i < timeline.length - 1; i++) {
+            // Find the segment that starts at this timeline index
+            final seg = segments.length > i - 1 ? segments[i - 1] : null;
+            final isWalk =
+                seg != null && seg.type.toLowerCase().contains('walk');
+            if (!isWalk || (seg != null && seg.startIndex != seg.endIndex)) {
+              validTimelineIndexes.add(i);
+            }
+          }
+          if (timeline.length > 1)
+            validTimelineIndexes.add(
+              timeline.length - 1,
+            ); // Always show last point
+        }
         return Stack(
           alignment: Alignment.topCenter,
           children: [
@@ -135,7 +162,8 @@ class RouteCard extends StatelessWidget {
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: route.timeline.map((point) {
+              children: validTimelineIndexes.map((i) {
+                final point = timeline[i];
                 return Column(
                   children: [
                     _buildTimelineDot(point),

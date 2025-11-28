@@ -156,9 +156,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.notifications_off_outlined,
-              size: 64,
+            Image.asset(
+              'assets/icons/notification.png',
+              width: 64,
+              height: 64,
               color: theme.textTheme.bodyLarge?.color?.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
@@ -192,9 +193,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.notifications_none_outlined,
-              size: 64,
+            Image.asset(
+              'assets/icons/notification.png',
+              width: 64,
+              height: 64,
               color: theme.textTheme.bodyLarge?.color?.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
@@ -270,14 +272,12 @@ class _NotificationCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Main content area
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Unread indicator
                         if (!notification.isRead)
                           Container(
                             margin: const EdgeInsets.only(top: 4, right: 12),
@@ -289,7 +289,6 @@ class _NotificationCard extends StatelessWidget {
                             ),
                           ),
                         if (notification.isRead) const SizedBox(width: 20),
-                        // Content
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,7 +336,6 @@ class _NotificationCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Delete button area
                 if (showDeleteButton)
                   GestureDetector(
                     onTap: onDelete,
