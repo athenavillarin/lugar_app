@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/route_option.dart';
+import '../constants/ui_constants.dart';
 
 class RouteCard extends StatelessWidget {
   final RouteOption route;
@@ -26,24 +27,13 @@ class RouteCard extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: UIConstants.borderRadiusLarge,
       child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? primaryBlue.withOpacity(0.3)
-                : Colors.transparent,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+        padding: UIConstants.paddingXLarge,
+        decoration: UIConstants.cardDecoration(
+          theme,
+          selected: isSelected,
+          primaryBlue: primaryBlue,
         ),
         child: Column(
           children: [
