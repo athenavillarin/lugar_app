@@ -6,6 +6,7 @@ import 'route_detail_screen.dart';
 import 'widgets/fare_type_toggle.dart';
 import 'widgets/location_suggestion_dropdown.dart';
 import 'widgets/route_card.dart';
+import 'widgets/no_route_card.dart';
 import 'constants/ui_constants.dart';
 
 class RouteSheet extends StatelessWidget {
@@ -165,12 +166,16 @@ class RouteSheet extends StatelessWidget {
                           if (routeOptions.isEmpty)
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 32),
-                              child: Center(
-                                child: Lottie.asset(
-                                  'assets/lottie/loading.json',
-                                  width: 120,
-                                  repeat: true,
-                                ),
+                              child: NoRouteCard(
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'No routes found. Try changing your search or check your locations.',
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             )
                           else
