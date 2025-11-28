@@ -77,9 +77,13 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
       markers.add(
         Marker(
           point: coord,
-          width: 32,
-          height: 32,
-          child: Image.asset(iconPath, width: 32, height: 32),
+          width: 56, // Increased size from 48 to 56
+          height: 56, // Increased size from 48 to 56
+          child: Image.asset(
+            iconPath,
+            width: 56, // Match the Marker size
+            height: 56, // Match the Marker size
+          ), // Adjusted icon size
         ),
       );
     }
@@ -102,7 +106,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primaryBlue = theme.colorScheme.primary;
 
     return Scaffold(
       body: Stack(
@@ -157,7 +160,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: primaryBlue,
+                          color: theme.colorScheme.primary,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -206,7 +209,8 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                                   child: ElevatedButton(
                                     onPressed: _minimizeSheet,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: primaryBlue,
+                                      backgroundColor:
+                                          theme.colorScheme.primary,
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
@@ -254,7 +258,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                               child: Text(
                                 'Find new route',
                                 style: TextStyle(
-                                  color: primaryBlue,
+                                  color: theme.colorScheme.primary,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: 'Montserrat',
@@ -450,7 +454,6 @@ class _TransportSegmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primaryBlue = theme.colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(

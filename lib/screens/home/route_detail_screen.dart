@@ -6,6 +6,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/route_option.dart';
 import '../../widgets/map_widget.dart';
+import 'constants/ui_constants.dart';
+import 'widgets/common_widgets.dart';
 
 class RouteDetailScreenClean extends StatefulWidget {
   final RouteOption routeOption;
@@ -113,11 +115,32 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
             .map((t) => t.label)
             .toList();
 
+        // Store complete route data for accurate reconstruction
         await ref.set({
+          'routeId': widget.routeOption.routeId,
           'title': _routeName ?? 'Route ${widget.routeOption.routeId}',
           'durationMinutes': durationMinutes,
           'price': widget.routeOption.regularFare,
           'checkpoints': checkpoints,
+          'origin': widget.routeOption.startLocation ?? checkpoints.first,
+          'destination': checkpoints.last,
+          // Store route path for accurate map rendering
+          'routePath': widget.routeOption.routePath
+              .map((p) => {'latitude': p.latitude, 'longitude': p.longitude})
+              .toList(),
+          // Store segments for accurate timeline
+          'segments': widget.routeOption.segments
+              .map(
+                (s) => {
+                  'type': s.type,
+                  'startIndex': s.startIndex,
+                  'endIndex': s.endIndex,
+                  'durationMinutes': s.durationMinutes,
+                  'getOnLabel': s.getOnLabel,
+                  'getOffLabel': s.getOffLabel,
+                },
+              )
+              .toList(),
           'createdAt': FieldValue.serverTimestamp(),
         });
       } else {
@@ -201,26 +224,6 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
         ? routePoints.first
         : const LatLng(10.7202, 122.5621);
 
-    final timelineTimes = widget.routeOption.timeline
-        .map(
-          (p) => Expanded(
-            child: Text(
-              p.time,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        )
-        .toList();
-
-    final timelineDots = widget.routeOption.timeline
-        .map(
-          (p) => const Expanded(child: Column(children: [SizedBox(height: 6)])),
-        )
-        .toList();
-
     return Scaffold(
       body: Stack(
         children: [
@@ -234,49 +237,16 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
             maxChildSize: 1.0,
             builder: (context, scrollController) {
               return Container(
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.shadowColor,
-                      blurRadius: 10,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
-                ),
+                decoration: UIConstants.sheetDecoration(theme),
                 child: ListView(
                   controller: scrollController,
                   padding: EdgeInsets.zero,
                   children: [
                     /// Drag handle
-                    Center(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 12),
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: primaryBlue,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
+                    Center(child: UIConstants.dragHandle(primaryBlue)),
 
                     /// Back button
-                    Padding(
-                      padding: const EdgeInsets.only(left: 20, top: 8),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => Navigator.of(context).pop(),
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
+                    const BackButtonWidget(),
 
                     /// Main content
                     Padding(
@@ -284,50 +254,163 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          /// Route Header
+                          /// Route Header Card
                           Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest
-                                  .withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            padding: UIConstants.paddingXLarge,
+                            decoration: UIConstants.cardDecoration(theme),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
+                                // Price
+                                Text(
+                                  'P ${widget.routeOption.regularFare.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Montserrat',
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Timeline (matching route card design)
+                                Stack(
+                                  alignment: Alignment.topCenter,
                                   children: [
-                                    Text(
-                                      'P ${widget.routeOption.regularFare.toStringAsFixed(2)}',
-                                      style: theme.textTheme.headlineSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: theme.colorScheme.onSurface,
-                                          ),
+                                    // Progress line
+                                    Positioned(
+                                      top: 7,
+                                      left: 10,
+                                      right: 10,
+                                      child: Container(
+                                        height: 2,
+                                        color: primaryBlue,
+                                      ),
                                     ),
-                                    const Spacer(),
-                                    Text(
-                                      _loadingRouteName
-                                          ? 'Loading...'
-                                          : (_routeName ??
-                                                'Route ${widget.routeOption.routeId}'),
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
+                                    // Timeline points
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: widget.routeOption.timeline.map((
+                                        point,
+                                      ) {
+                                        final isFirst =
+                                            point ==
+                                            widget.routeOption.timeline.first;
+                                        final isLast =
+                                            point ==
+                                            widget.routeOption.timeline.last;
+                                        return Column(
+                                          children: [
+                                            // Dot
+                                            Container(
+                                              width: 16,
+                                              height: 16,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: primaryBlue,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: Container(
+                                                  width: 6,
+                                                  height: 6,
+                                                  decoration: BoxDecoration(
+                                                    color: point.isCheckpoint
+                                                        ? Colors.white
+                                                        : primaryBlue,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            // Icon below dot (fixed height for alignment)
+                                            SizedBox(
+                                              height: 20,
+                                              child: () {
+                                                if (isFirst) {
+                                                  return const Icon(
+                                                    Icons.directions_walk,
+                                                    size: 16,
+                                                    color: Colors.black87,
+                                                  );
+                                                } else if (isLast) {
+                                                  // Show walking icon if the last point has walking segment
+                                                  final hasWalkingSegmentToEnd =
+                                                      widget
+                                                          .routeOption
+                                                          .segments
+                                                          .isNotEmpty &&
+                                                      widget
+                                                              .routeOption
+                                                              .segments
+                                                              .last
+                                                              .type ==
+                                                          'Walk';
+                                                  return hasWalkingSegmentToEnd
+                                                      ? const Icon(
+                                                          Icons.directions_walk,
+                                                          size: 16,
+                                                          color: Colors.black87,
+                                                        )
+                                                      : const SizedBox.shrink();
+                                                } else {
+                                                  return const Icon(
+                                                    Icons.directions_bus,
+                                                    size: 16,
+                                                    color: Colors.black87,
+                                                  );
+                                                }
+                                              }(),
+                                            ),
+                                            // Label - simplified to show Start/Jeepney/First word
+                                            Text(
+                                              () {
+                                                if (isFirst) return 'Start';
+                                                if (isLast) {
+                                                  // Show first word of destination
+                                                  final words = point.label
+                                                      .trim()
+                                                      .split(RegExp(r'[\s,]+'));
+                                                  for (final word in words) {
+                                                    if (word.length > 2)
+                                                      return word;
+                                                  }
+                                                  return words.isNotEmpty
+                                                      ? words.first
+                                                      : point.label;
+                                                }
+                                                return 'Jeepney';
+                                              }(),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[600],
+                                                fontWeight: FontWeight.w500,
+                                                fontFamily: 'Montserrat',
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            // Time
+                                            Text(
+                                              point.time,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[400],
+                                                fontWeight: FontWeight.w400,
+                                                fontFamily: 'Montserrat',
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
                                     ),
                                   ],
                                 ),
-
-                                const SizedBox(height: 12),
-
-                                if (widget.routeOption.timeline.isNotEmpty) ...[
-                                  Row(children: timelineTimes),
-                                  const SizedBox(height: 8),
-                                  Row(children: timelineDots),
-                                ],
                               ],
                             ),
                           ),
@@ -345,81 +428,22 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(12),
+                                  color:
+                                      theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // Segment Header
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 10,
-                                      ),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black87,
-                                        borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(12),
-                                          topRight: Radius.circular(12),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                segment.icon,
-                                                color:
-                                                    theme.colorScheme.onPrimary,
-                                                size: 18,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                segment.type,
-                                                style: theme.textTheme.bodyLarge
-                                                    ?.copyWith(
-                                                      color: theme
-                                                          .colorScheme
-                                                          .onPrimary,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              if (!isWalk)
-                                                Text(
-                                                  'P ${widget.routeOption.regularFare.toStringAsFixed(0)}',
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.copyWith(
-                                                        color: theme
-                                                            .colorScheme
-                                                            .onPrimary,
-                                                      ),
-                                                ),
-                                              if (!isWalk)
-                                                const SizedBox(width: 12),
-                                              Text(
-                                                '${segment.durationMinutes} min',
-                                                style: theme.textTheme.bodyLarge
-                                                    ?.copyWith(
-                                                      color: theme
-                                                          .colorScheme
-                                                          .onPrimary,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
+                                    SegmentHeader(
+                                      icon: segment.icon,
+                                      type: segment.type,
+                                      fare: !isWalk
+                                          ? 'P ${widget.routeOption.regularFare.toStringAsFixed(0)}'
+                                          : null,
+                                      duration:
+                                          '${segment.durationMinutes} min',
                                     ),
                                     // Segment Body
                                     Padding(
