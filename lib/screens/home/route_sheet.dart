@@ -197,26 +197,31 @@ class RouteSheet extends StatelessWidget {
                           Column(
                             children: routeOptions.isNotEmpty
                                 ? routeOptions.map((route) {
-                                    return RouteCard(
-                                      route: route,
-                                      fareType: selectedFareType,
-                                      isSelected:
-                                          false, // You can implement selection logic
-                                      primaryBlue: primaryBlue,
-                                      onTap: () async {
-                                        final result =
-                                            await Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    RouteDetailScreenClean(
-                                                      routeOption: route,
-                                                    ),
-                                              ),
-                                            );
-                                        if (result == 'find_new_route') {
-                                          onFindNewRoute();
-                                        }
-                                      },
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16.0,
+                                      ), // Add spacing between route options
+                                      child: RouteCard(
+                                        route: route,
+                                        fareType: selectedFareType,
+                                        isSelected:
+                                            false, // You can implement selection logic
+                                        primaryBlue: primaryBlue,
+                                        onTap: () async {
+                                          final result =
+                                              await Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      RouteDetailScreenClean(
+                                                        routeOption: route,
+                                                      ),
+                                                ),
+                                              );
+                                          if (result == 'find_new_route') {
+                                            onFindNewRoute();
+                                          }
+                                        },
+                                      ),
                                     );
                                   }).toList()
                                 : [

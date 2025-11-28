@@ -62,13 +62,26 @@ class RouteCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(
-              route.duration,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1F2024),
-                fontFamily: 'Montserrat',
+            RichText(
+              text: TextSpan(
+                text: route.duration.split(' ')[0], // Extract the number
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F2024),
+                  fontFamily: 'Montserrat',
+                ),
+                children: [
+                  TextSpan(
+                    text: ' mins', // Extract the unit
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1F2024),
+                      fontFamily: 'Montserrat',
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 16),
