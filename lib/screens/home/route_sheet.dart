@@ -5,6 +5,7 @@ import 'route_detail_screen.dart';
 import 'widgets/fare_type_toggle.dart';
 import 'widgets/location_suggestion_dropdown.dart';
 import 'widgets/route_card.dart';
+import 'constants/ui_constants.dart';
 
 class RouteSheet extends StatelessWidget {
   const RouteSheet({
@@ -73,33 +74,12 @@ class RouteSheet extends StatelessWidget {
         maxChildSize: 0.15,
         builder: (context, scrollController) {
           return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, -2),
-                ),
-              ],
-            ),
+            decoration: UIConstants.sheetDecoration(theme),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: primaryBlue,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+                  UIConstants.dragHandle(primaryBlue),
                   Text(
                     'Select location on map',
                     style: TextStyle(
@@ -123,37 +103,14 @@ class RouteSheet extends StatelessWidget {
       maxChildSize: 0.85,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                offset: Offset(0, -2),
-              ),
-            ],
-          ),
+          decoration: UIConstants.sheetDecoration(theme),
           child: Stack(
             children: [
               ListView(
                 controller: scrollController,
                 padding: EdgeInsets.zero,
                 children: [
-                  Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: primaryBlue,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
+                  Center(child: UIConstants.dragHandle(primaryBlue)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(

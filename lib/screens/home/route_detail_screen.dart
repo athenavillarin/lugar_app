@@ -6,6 +6,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/route_option.dart';
 import '../../widgets/map_widget.dart';
+import 'constants/ui_constants.dart';
+import 'widgets/common_widgets.dart';
 
 class RouteDetailScreenClean extends StatefulWidget {
   final RouteOption routeOption;
@@ -214,49 +216,16 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
             maxChildSize: 1.0,
             builder: (context, scrollController) {
               return Container(
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.shadowColor,
-                      blurRadius: 10,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
-                ),
+                decoration: UIConstants.sheetDecoration(theme),
                 child: ListView(
                   controller: scrollController,
                   padding: EdgeInsets.zero,
                   children: [
                     /// Drag handle
-                    Center(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 12),
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: primaryBlue,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
+                    Center(child: UIConstants.dragHandle(primaryBlue)),
 
                     /// Back button
-                    Padding(
-                      padding: const EdgeInsets.only(left: 20, top: 8),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => Navigator.of(context).pop(),
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
+                    const BackButtonWidget(),
 
                     /// Main content
                     Padding(
@@ -266,11 +235,8 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                         children: [
                           /// Route Header Card
                           Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
+                            padding: UIConstants.paddingXLarge,
+                            decoration: UIConstants.cardDecoration(theme),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -430,74 +396,14 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // Segment Header
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 10,
-                                      ),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black87,
-                                        borderRadius: BorderRadius.only(
-                                          topLeft: Radius.circular(16),
-                                          topRight: Radius.circular(16),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                segment.icon,
-                                                color:
-                                                    theme.colorScheme.onPrimary,
-                                                size: 18,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                segment.type,
-                                                style: theme.textTheme.bodyLarge
-                                                    ?.copyWith(
-                                                      color: theme
-                                                          .colorScheme
-                                                          .onPrimary,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              if (!isWalk)
-                                                Text(
-                                                  'P ${widget.routeOption.regularFare.toStringAsFixed(0)}',
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.copyWith(
-                                                        color: theme
-                                                            .colorScheme
-                                                            .onPrimary,
-                                                      ),
-                                                ),
-                                              if (!isWalk)
-                                                const SizedBox(width: 12),
-                                              Text(
-                                                '${segment.durationMinutes} min',
-                                                style: theme.textTheme.bodyLarge
-                                                    ?.copyWith(
-                                                      color: theme
-                                                          .colorScheme
-                                                          .onPrimary,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
+                                    SegmentHeader(
+                                      icon: segment.icon,
+                                      type: segment.type,
+                                      fare: !isWalk
+                                          ? 'P ${widget.routeOption.regularFare.toStringAsFixed(0)}'
+                                          : null,
+                                      duration:
+                                          '${segment.durationMinutes} min',
                                     ),
                                     // Segment Body
                                     Padding(
