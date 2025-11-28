@@ -71,7 +71,8 @@ class _SignupScreenState extends State<SignupScreen> {
         'authProvider': 'password',
       });
 
-      if (mounted) Navigator.of(context).pushReplacementNamed('/home');
+      if (mounted)
+        Navigator.of(context).pushReplacementNamed('/loading_to_home');
     } on FirebaseAuthException catch (e) {
       _showError(e.message ?? 'Signup failed');
     } catch (_) {
@@ -106,7 +107,8 @@ class _SignupScreenState extends State<SignupScreen> {
           'authProvider': 'google',
         });
       }
-      if (mounted) Navigator.of(context).pushReplacementNamed('/home');
+      if (mounted)
+        Navigator.of(context).pushReplacementNamed('/loading_to_home');
     } catch (e) {
       _showError('Google signup failed');
     } finally {

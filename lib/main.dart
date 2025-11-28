@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'screens/auth/splash_screen.dart';
+import 'screens/auth/animated_splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/app_shell.dart';
@@ -107,10 +108,13 @@ class _MyAppState extends State<MyApp> {
         ),
         initialRoute: '/',
         routes: {
-          '/': (context) => const SplashScreen(),
+          '/': (context) => const AnimatedSplashScreen(),
+          '/onboarding': (context) => const SplashScreen(),
           '/login': (context) => const LoginScreen(),
           '/signup': (context) => const SignupScreen(),
           '/home': (context) => const AppShell(),
+          '/loading_to_home': (context) =>
+              const AnimatedSplashScreen(nextRoute: '/home'),
         },
       ),
     );

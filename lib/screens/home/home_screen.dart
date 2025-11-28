@@ -375,7 +375,14 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    // Show loading animation immediately
+    setState(() {
+      _showRouteResults = true;
+      _routeOptions.clear();
+    });
+
     // 1. Get coordinates for from/to
+    final minLoadingDuration = Future.delayed(const Duration(seconds: 4));
     Future<LatLng?> getLatLng(String input) async {
       final regex = RegExp(r'\(([-\d.]+),\s*([-\d.]+)\)');
       final match = regex.firstMatch(input);
@@ -424,13 +431,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // Call the service
-    final options = await findRoutes(
+    // Call the service and wait for both the fetch and the minimum loading duration
+    final fetchRoutes = findRoutes(
       fromCoord.latitude,
       fromCoord.longitude,
       toCoord.latitude,
       toCoord.longitude,
     );
+    final options = await Future.wait([
+      fetchRoutes,
+      minLoadingDuration,
+    ]).then((results) => results[0] as List<RouteOption>);
 
     setState(() {
       print('Matched route count: ${options.length}');

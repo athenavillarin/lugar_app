@@ -1,3 +1,4 @@
+import 'package:lottie/lottie.dart';
 import 'package:flutter/material.dart';
 import '../models/location_suggestion.dart';
 import '../models/route_option.dart';
@@ -194,53 +195,45 @@ class RouteSheet extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           // Route cards
-                          Column(
-                            children: routeOptions.isNotEmpty
-                                ? routeOptions.map((route) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 16.0,
-                                      ), // Add spacing between route options
-                                      child: RouteCard(
-                                        route: route,
-                                        fareType: selectedFareType,
-                                        isSelected:
-                                            false, // You can implement selection logic
-                                        primaryBlue: primaryBlue,
-                                        onTap: () async {
-                                          final result =
-                                              await Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      RouteDetailScreenClean(
-                                                        routeOption: route,
-                                                      ),
-                                                ),
-                                              );
-                                          if (result == 'find_new_route') {
-                                            onFindNewRoute();
-                                          }
-                                        },
-                                      ),
-                                    );
-                                  }).toList()
-                                : [
-                                    // Placeholder when no routes
-                                    Container(
-                                      height: 120,
-                                      margin: const EdgeInsets.only(bottom: 16),
-                                      decoration: BoxDecoration(
-                                        color: theme
-                                            .colorScheme
-                                            .surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: const Center(
-                                        child: Text('No routes found'),
-                                      ),
-                                    ),
-                                  ],
-                          ),
+                          if (routeOptions.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 32),
+                              child: Center(
+                                child: Lottie.asset(
+                                  'assets/lottie/loading.json',
+                                  width: 120,
+                                  repeat: true,
+                                ),
+                              ),
+                            )
+                          else
+                            Column(
+                              children: routeOptions.map((route) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16.0),
+                                  child: RouteCard(
+                                    route: route,
+                                    fareType: selectedFareType,
+                                    isSelected: false,
+                                    primaryBlue: primaryBlue,
+                                    onTap: () async {
+                                      final result = await Navigator.of(context)
+                                          .push(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  RouteDetailScreenClean(
+                                                    routeOption: route,
+                                                  ),
+                                            ),
+                                          );
+                                      if (result == 'find_new_route') {
+                                        onFindNewRoute();
+                                      }
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                            ),
                         ],
                         const SizedBox(height: 24),
                       ],

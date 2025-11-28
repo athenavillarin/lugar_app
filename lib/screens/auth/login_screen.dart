@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.of(context).pushReplacementNamed('/loading_to_home');
       }
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred';
@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await _auth.signInWithCredential(credential);
 
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.of(context).pushReplacementNamed('/loading_to_home');
       }
     } catch (e) {
       _showErrorDialog('Google sign-in failed: ${e.toString()}');
@@ -303,7 +303,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.of(context).pushReplacementNamed('/home');
+                          Navigator.of(
+                            context,
+                          ).pushReplacementNamed('/loading_to_home');
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
