@@ -419,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print('DEBUG: One or both coordinates are null.');
       setState(() {
         _routeOptions.clear();
-        _showRouteResults = true;
+        _showRouteResults = false;
       });
       return;
     }
@@ -437,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _routeOptions
         ..clear()
         ..addAll(options);
-      _showRouteResults = true;
+      _showRouteResults = options.isNotEmpty;
     });
   }
 
