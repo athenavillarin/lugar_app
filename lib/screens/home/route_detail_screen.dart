@@ -201,26 +201,6 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
         ? routePoints.first
         : const LatLng(10.7202, 122.5621);
 
-    final timelineTimes = widget.routeOption.timeline
-        .map(
-          (p) => Expanded(
-            child: Text(
-              p.time,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        )
-        .toList();
-
-    final timelineDots = widget.routeOption.timeline
-        .map(
-          (p) => const Expanded(child: Column(children: [SizedBox(height: 6)])),
-        )
-        .toList();
-
     return Scaffold(
       body: Stack(
         children: [
@@ -284,50 +264,147 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          /// Route Header
+                          /// Route Header Card
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest
-                                  .withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(12),
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
+                                // Price
+                                Text(
+                                  'P ${widget.routeOption.regularFare.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Montserrat',
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Timeline (matching route card design)
+                                Stack(
+                                  alignment: Alignment.topCenter,
                                   children: [
-                                    Text(
-                                      'P ${widget.routeOption.regularFare.toStringAsFixed(2)}',
-                                      style: theme.textTheme.headlineSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: theme.colorScheme.onSurface,
-                                          ),
+                                    // Progress line
+                                    Positioned(
+                                      top: 7,
+                                      left: 10,
+                                      right: 10,
+                                      child: Container(
+                                        height: 2,
+                                        color: primaryBlue,
+                                      ),
                                     ),
-                                    const Spacer(),
-                                    Text(
-                                      _loadingRouteName
-                                          ? 'Loading...'
-                                          : (_routeName ??
-                                                'Route ${widget.routeOption.routeId}'),
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
+                                    // Timeline points
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: widget.routeOption.timeline.map((
+                                        point,
+                                      ) {
+                                        final isFirst =
+                                            point ==
+                                            widget.routeOption.timeline.first;
+                                        final isLast =
+                                            point ==
+                                            widget.routeOption.timeline.last;
+                                        return Column(
+                                          children: [
+                                            // Dot
+                                            Container(
+                                              width: 16,
+                                              height: 16,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: primaryBlue,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: Container(
+                                                  width: 6,
+                                                  height: 6,
+                                                  decoration: BoxDecoration(
+                                                    color: point.isCheckpoint
+                                                        ? Colors.white
+                                                        : primaryBlue,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            // Icon below dot (fixed height for alignment)
+                                            SizedBox(
+                                              height: 20,
+                                              child: () {
+                                                if (isFirst) {
+                                                  return const Icon(
+                                                    Icons.directions_walk,
+                                                    size: 16,
+                                                    color: Colors.black87,
+                                                  );
+                                                } else if (isLast) {
+                                                  // Show walking icon if the last point has walking segment
+                                                  final hasWalkingSegmentToEnd =
+                                                      widget
+                                                          .routeOption
+                                                          .segments
+                                                          .isNotEmpty &&
+                                                      widget
+                                                              .routeOption
+                                                              .segments
+                                                              .last
+                                                              .type ==
+                                                          'Walk';
+                                                  return hasWalkingSegmentToEnd
+                                                      ? const Icon(
+                                                          Icons.directions_walk,
+                                                          size: 16,
+                                                          color: Colors.black87,
+                                                        )
+                                                      : const SizedBox.shrink();
+                                                } else {
+                                                  return const Icon(
+                                                    Icons.directions_bus,
+                                                    size: 16,
+                                                    color: Colors.black87,
+                                                  );
+                                                }
+                                              }(),
+                                            ),
+                                            // Label
+                                            Text(
+                                              point.label,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[600],
+                                                fontWeight: FontWeight.w500,
+                                                fontFamily: 'Montserrat',
+                                              ),
+                                            ),
+                                            // Time
+                                            Text(
+                                              point.time,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[400],
+                                                fontWeight: FontWeight.w400,
+                                                fontFamily: 'Montserrat',
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
                                     ),
                                   ],
                                 ),
-
-                                const SizedBox(height: 12),
-
-                                if (widget.routeOption.timeline.isNotEmpty) ...[
-                                  Row(children: timelineTimes),
-                                  const SizedBox(height: 8),
-                                  Row(children: timelineDots),
-                                ],
                               ],
                             ),
                           ),
