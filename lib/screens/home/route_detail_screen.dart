@@ -115,11 +115,32 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
             .map((t) => t.label)
             .toList();
 
+        // Store complete route data for accurate reconstruction
         await ref.set({
+          'routeId': widget.routeOption.routeId,
           'title': _routeName ?? 'Route ${widget.routeOption.routeId}',
           'durationMinutes': durationMinutes,
           'price': widget.routeOption.regularFare,
           'checkpoints': checkpoints,
+          'origin': widget.routeOption.startLocation ?? checkpoints.first,
+          'destination': checkpoints.last,
+          // Store route path for accurate map rendering
+          'routePath': widget.routeOption.routePath
+              .map((p) => {'latitude': p.latitude, 'longitude': p.longitude})
+              .toList(),
+          // Store segments for accurate timeline
+          'segments': widget.routeOption.segments
+              .map(
+                (s) => {
+                  'type': s.type,
+                  'startIndex': s.startIndex,
+                  'endIndex': s.endIndex,
+                  'durationMinutes': s.durationMinutes,
+                  'getOnLabel': s.getOnLabel,
+                  'getOffLabel': s.getOffLabel,
+                },
+              )
+              .toList(),
           'createdAt': FieldValue.serverTimestamp(),
         });
       } else {
@@ -345,15 +366,34 @@ class _RouteDetailScreenCleanState extends State<RouteDetailScreenClean> {
                                                 }
                                               }(),
                                             ),
-                                            // Label
+                                            // Label - simplified to show Start/Jeepney/First word
                                             Text(
-                                              point.label,
+                                              () {
+                                                if (isFirst) return 'Start';
+                                                if (isLast) {
+                                                  // Show first word of destination
+                                                  final words = point.label
+                                                      .trim()
+                                                      .split(RegExp(r'[\s,]+'));
+                                                  for (final word in words) {
+                                                    if (word.length > 2)
+                                                      return word;
+                                                  }
+                                                  return words.isNotEmpty
+                                                      ? words.first
+                                                      : point.label;
+                                                }
+                                                return 'Jeepney';
+                                              }(),
                                               style: TextStyle(
                                                 fontSize: 10,
                                                 color: Colors.grey[600],
                                                 fontWeight: FontWeight.w500,
                                                 fontFamily: 'Montserrat',
                                               ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.center,
                                             ),
                                             // Time
                                             Text(
