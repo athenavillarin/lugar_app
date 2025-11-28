@@ -23,10 +23,9 @@ class NominatimPlace {
 
 class NominatimService {
   static Future<List<NominatimPlace>> searchPlaces(String query) async {
-    // Search without biasing since OSM data is already for Iloilo
     Future<List<NominatimPlace>> doSearch(String q) async {
       final url = Uri.parse(
-        'https://a5fd03e26b68.ngrok-free.app/search?q=${Uri.encodeComponent(q)}&format=json',
+        'http://178.128.23.28:8088/search?q=$q&format=json',
       );
       print('DEBUG: NominatimService.searchPlaces url = $url');
       final response = await http
@@ -39,7 +38,7 @@ class NominatimService {
       if (response.statusCode == 200) {
         final List data = json.decode(response.body);
         print(
-          'DEBUG: NominatimService.searchPlaces parsed count = [32m${data.length}[0m',
+          'DEBUG: NominatimService.searchPlaces parsed count = ${data.length}',
         );
         final results = data.map((e) => NominatimPlace.fromJson(e)).toList();
         for (var place in results) {
@@ -87,7 +86,7 @@ class NominatimService {
 
   static Future<NominatimPlace?> reverseGeocode(double lat, double lon) async {
     final url = Uri.parse(
-      'https://a5fd03e26b68.ngrok-free.app/reverse?lat=$lat&lon=$lon&format=json',
+      'http://178.128.23.28:8088/reverse?lat=$lat&lon=$lon&format=json',
     );
     print('DEBUG: NominatimService.reverseGeocode url = $url');
     try {
