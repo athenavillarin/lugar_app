@@ -12,6 +12,8 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  // Track expanded notification IDs
+  final Set<String> _expandedIds = {};
   bool _isInitialized = false;
   bool _showDeleteButtons = false;
 
@@ -121,23 +123,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       itemBuilder: (context, index) {
                         final notification =
                             notificationProvider.notifications[index];
+                        final isExpanded = _expandedIds.contains(
+                          notification.id,
+                        );
                         return _NotificationCard(
                           notification: notification,
                           timeAgo: _formatTimeAgo(notification.createdAt),
                           showDeleteButton: _showDeleteButtons,
+                          expanded: isExpanded,
                           onTap: () async {
                             if (!notification.isRead) {
                               await notificationProvider.markAsRead(
                                 notification.id,
                               );
-                              setState(() {});
                             }
+                            setState(() {
+                              if (isExpanded) {
+                                _expandedIds.remove(notification.id);
+                              } else {
+                                _expandedIds.add(notification.id);
+                              }
+                            });
                           },
                           onDelete: () async {
                             await notificationProvider.deleteNotification(
                               notification.id,
                             );
-                            setState(() {});
+                            setState(() {
+                              _expandedIds.remove(notification.id);
+                            });
                           },
                         );
                       },
@@ -231,6 +245,7 @@ class _NotificationCard extends StatelessWidget {
     required this.showDeleteButton,
     required this.onTap,
     required this.onDelete,
+    this.expanded = false,
   });
 
   final AppNotification notification;
@@ -238,6 +253,7 @@ class _NotificationCard extends StatelessWidget {
   final bool showDeleteButton;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -321,8 +337,10 @@ class _NotificationCard extends StatelessWidget {
                               const SizedBox(height: 6),
                               Text(
                                 notification.body,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
+                                maxLines: expanded ? null : 3,
+                                overflow: expanded
+                                    ? TextOverflow.visible
+                                    : TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: theme.hintColor,
